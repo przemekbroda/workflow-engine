@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace EventSourcingEngine;
 
 public class Cursor<TState> where TState : new()
