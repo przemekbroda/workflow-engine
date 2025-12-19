@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using EventSourcingEngine.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -188,11 +183,21 @@ public abstract class EventSourceTree<TState> where TState : new()
         return eventNodeInst;
     }
 
-    private void ValidateNodeType(EventNode<TState> eventNode)
+    private static void ValidateNodeType(EventNode<TState> eventNode)
     {
         if (!typeof(INodeExecutor<TState>).IsAssignableFrom(eventNode.Executor))
         {
             throw new Exception("dupa zbita");
+        }
+
+        //check for duplicated handled events in next executors
+        var eventNames = new HashSet<string>();
+        foreach (var producesEventName in eventNode.NextExecutors.Select(ne => ne.HandlesEvents).SelectMany(x => x))
+        {
+            if (!eventNames.Add(producesEventName))
+            {
+                throw new Exception("asda");
+            }
         }
     }
 
