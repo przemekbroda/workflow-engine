@@ -54,7 +54,7 @@ public abstract class EventSourceTree<TState, TEvent>
     {
         _cursor.State = stateInitializer(_cursor.CurrentEvent.Payload);
 
-        //if tree only contains one init event - initial event, don't pop it from the stack
+        //if the tree only contains one init event - initial event, don't pop it from the stack
         if (_cursor.InitEvents.Count > 1)
         {
             PopProcessedEvent();
@@ -65,40 +65,45 @@ public abstract class EventSourceTree<TState, TEvent>
     {
         eventNodeInst.Executor.Cursor = _cursor;
 
-        switch (_cursor.InitEvents.Count)
+        if (_cursor.InitEvents.Count == 1 && eventNodeInst.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.EventName))
         {
-            //if this is the last event on the list, then don't restore the state because that's the node that should handle the event
-            case 1 when eventNodeInst.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.EventName):
-                return eventNodeInst;
-            case 1:
-                return null;
+            return eventNodeInst;
         }
-        
+
         if (ShouldHandleStateUpdate(eventNodeInst))
         {
             Console.WriteLine($"Updating state in the {eventNodeInst.Executor.GetType().Name}");
             await eventNodeInst.Executor.TryUpdateState(_cursor.CurrentEvent, cancellationToken);
 
-            PopProcessedEvent();
-
-            if (ShouldHandleStateUpdate(eventNodeInst))
+            if (_cursor.InitEvents.Count > 1)
             {
-                return await ResumeTree(eventNodeInst, cancellationToken);
-            }
-
-            foreach (var nextExecutor in _eventNodeInst.NextExecutors)
-            {
-                var toResume = await ResumeTree(nextExecutor, cancellationToken);
-                if (toResume is not null)
+                PopProcessedEvent();
+                
+                // It might be possible that same node should handle next event
+                if (ShouldHandleStateUpdate(eventNodeInst))
                 {
-                    return toResume;
+                    return await ResumeTree(eventNodeInst, cancellationToken);
                 }
             }
+            
+            return await TryResumeInNextExecutors(eventNodeInst, cancellationToken);
+        }
+        
+        return null;
+    }
 
-            return null;
+    private async Task<EventNodeInst<TState, TEvent>?> TryResumeInNextExecutors(EventNodeInst<TState, TEvent> eventNodeInst, CancellationToken cancellationToken)
+    {
+        foreach (var nextExecutor in eventNodeInst.NextExecutors)
+        {
+            var toResume = await ResumeTree(nextExecutor, cancellationToken);
+            if (toResume is not null)
+            {
+                return toResume;
+            }
         }
 
-        return eventNodeInst;
+        return null;
     }
 
     /// <summary>
@@ -107,8 +112,8 @@ public abstract class EventSourceTree<TState, TEvent>
     /// <param name="cancellationToken"></param>
     /// <param name="stateInitializer">
     ///     Function that initializes the state, argument of the func is the payload of the first event.
-    ///     It is being executed only once just after ExecuteTree method call. If first event's payload is null,
-    ///     then passed object to the function will also be null
+    ///     It is being executed only once just after the ExecuteTree method call. If the first event's payload is null,
+    ///     then a passed object to the function will also be null
     /// </param>
     /// <exception cref="Exception"></exception>
     public async Task ExecuteTree(Func<object?, TState> stateInitializer, CancellationToken cancellationToken)
@@ -119,7 +124,7 @@ public abstract class EventSourceTree<TState, TEvent>
 
         if (eventNodeInst is null)
         {
-            throw new Exception("Cannot resume event sourceing tree");
+            throw new Exception("Cannot resume event sourcing tree");
         }
         
         await TryExecuteNode(eventNodeInst, cancellationToken);
@@ -205,9 +210,8 @@ public abstract class EventSourceTree<TState, TEvent>
 
     private bool ShouldHandleStateUpdate(EventNodeInst<TState, TEvent> eventNodeInst)
     {
-        var previousEventExists = _cursor.ProcessedEvents.TryPeek(out var previousEvent);
-        var handlesLastProcessedEvent = eventNodeInst.Executor.HandlesEvents.Contains(previousEventExists ? previousEvent!.EventName : _cursor.CurrentEvent.EventName);
-
+        var previousEvent = _cursor.ProcessedEvents.Peek();
+        var handlesLastProcessedEvent = eventNodeInst.Executor.HandlesEvents.Contains(previousEvent.EventName);
         var producesEvent = eventNodeInst.Executor.ProducesEvents.Contains(_cursor.CurrentEvent.EventName);
         
         return producesEvent && handlesLastProcessedEvent;

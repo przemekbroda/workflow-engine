@@ -10,9 +10,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<FirstEventSourceTree>();
-builder.Services.AddTransient<ResultAwaiterNode>();
 builder.Services.AddTransient<EventExecutorNode>();
-builder.Services.AddTransient<ResultAwaiterNode>();
 builder.Services.AddTransient<ResultSaverNode>();
 
 var app = builder.Build();
@@ -26,11 +24,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
 app.MapGet("/execute-tree",  async (FirstEventSourceTree firstEventSourceTree, CancellationToken cancellationToken) =>
     {
         firstEventSourceTree.SetupCursor([
@@ -38,10 +31,13 @@ app.MapGet("/execute-tree",  async (FirstEventSourceTree firstEventSourceTree, C
             new Event("AwaitingResult", null),
             new Event("AwaitingResult", null),
             new Event("AwaitingResult", null),
-            new Event("AwaitingResult", null),
             new Event("ResultFetched", 600),
-            new Event("ResultSaveError", null),
-            new Event("ResultSaveError", null),
+            new Event("Dupa", 600),
+            
+            // new Event("AwaitingResult", null),
+            // new Event("ResultFetched", 600),
+            // new Event("ResultSaveError", null),
+            // new Event("ResultSaveError", null),
         ]);
         
         await firstEventSourceTree.ExecuteTree(payload => new TestState
