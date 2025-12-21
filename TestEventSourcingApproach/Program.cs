@@ -28,9 +28,10 @@ app.MapGet("/execute-tree",  async (FirstEventSourceTree firstEventSourceTree, C
     {
         firstEventSourceTree.SetupCursor([
             new Event("AwaitingExecution", 300),
+            new Event("AwaitingResult", 600),
+            new Event("AwaitingResult", 600),
+            new Event("AwaitingResult", 600),
             new Event("ResultFetched", 600),
-            new Event("ResultSaveError", null),
-            new Event("ResultSaveError", null),
         ]);
         
         await firstEventSourceTree.ExecuteTree(payload => new TestState
