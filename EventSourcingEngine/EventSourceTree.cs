@@ -3,27 +3,47 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace EventSourcingEngine;
 
-public abstract class EventSourceTree<TState, TEvent> 
+internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent>
     where TState : new()
     where TEvent : Event
 {
-    private EventNode<TState, TEvent> _eventNode = null!;
-    private EventNodeInst<TState, TEvent> _eventNodeInst = null!;
+    private readonly EventNode<TState, TEvent> _eventNode;
     private readonly IServiceProvider _serviceProvider;
+    
+    private EventNodeInst<TState, TEvent> _eventNodeInst = null!;
     private Cursor<TState, TEvent> _cursor = null!;
 
-    protected EventSourceTree(IServiceProvider serviceProvider)
+    public EventSourceTree(IServiceProvider serviceProvider, TreeProvider<TState, TEvent> treeProvider)
     {
         _serviceProvider = serviceProvider;
+        _eventNode = treeProvider.ProvideTree();
         ResolveTree();
     }
+    
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="initialCursorEvents"></param>
+    /// <param name="cancellationToken"></param>
+    /// <param name="stateInitializer">
+    ///     Function that initializes the state, argument of the func is the payload of the first event.
+    ///     It is being executed only once just after the ExecuteTree method call. If the first event's payload is null,
+    ///     then a passed object to the function will also be null
+    /// </param>
+    /// <exception cref="Exception"></exception>
+    public async Task ExecuteTree(List<TEvent> initialCursorEvents, Func<object?, TState> stateInitializer, CancellationToken cancellationToken)
+    {
+        SetupCursor(initialCursorEvents);
+        
+        InitializeState(stateInitializer);
 
-    protected abstract EventNode<TState, TEvent> ProvideTree();
-
+        await ResumeAndExecuteEventNode(cancellationToken);
+        
+        Console.WriteLine("finished processing");
+    }
+    
     private void ResolveTree()
     {
-        _eventNode = ProvideTree();
-
         if (_eventNode is null)
         {
             throw new EventSourcingEngineException("No nodes were provided for event sourcing engine");
@@ -32,7 +52,7 @@ public abstract class EventSourceTree<TState, TEvent>
         _eventNodeInst = InstantiateNode(_eventNode);
     }
 
-    public void SetupCursor(List<TEvent> existingEvents)
+    private void SetupCursor(List<TEvent> existingEvents)
     {
         var ordered = existingEvents
             .ToList();
@@ -106,25 +126,6 @@ public abstract class EventSourceTree<TState, TEvent>
         return null;
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="cancellationToken"></param>
-    /// <param name="stateInitializer">
-    ///     Function that initializes the state, argument of the func is the payload of the first event.
-    ///     It is being executed only once just after the ExecuteTree method call. If the first event's payload is null,
-    ///     then a passed object to the function will also be null
-    /// </param>
-    /// <exception cref="Exception"></exception>
-    public async Task ExecuteTree(Func<object?, TState> stateInitializer, CancellationToken cancellationToken)
-    {
-        InitializeState(stateInitializer);
-
-        await ResumeAndExecuteEventNode(cancellationToken);
-        
-        Console.WriteLine("finished processing");
-    }
-
     private async Task ResumeAndExecuteEventNode(CancellationToken cancellationToken)
     {
         var eventNodeInst = ResumeTree(_eventNodeInst);
@@ -178,8 +179,6 @@ public abstract class EventSourceTree<TState, TEvent>
 
     private EventNodeInst<TState, TEvent> InstantiateNode(EventNode<TState, TEvent> eventNode)
     {
-        ValidateNodeType(eventNode);
-
         if (_serviceProvider.GetRequiredService(eventNode.Executor) is not INodeExecutor<TState, TEvent> nodeExecutor)
         {
             throw new Exception("Could not find provided object");
@@ -193,24 +192,6 @@ public abstract class EventSourceTree<TState, TEvent>
         nodeExecutor.HandlesEvents = eventNode.HandlesEvents;
 
         return eventNodeInst;
-    }
-
-    private static void ValidateNodeType(EventNode<TState, TEvent> eventNode)
-    {
-        if (!typeof(INodeExecutor<TState, TEvent>).IsAssignableFrom(eventNode.Executor))
-        {
-            throw new Exception("dupa zbita");
-        }
-
-        //check for duplicated handled events in next executors
-        var eventNames = new HashSet<string>();
-        foreach (var producesEventName in eventNode.NextExecutors.Select(ne => ne.HandlesEvents).SelectMany(x => x))
-        {
-            if (!eventNames.Add(producesEventName))
-            {
-                throw new Exception("asda");
-            }
-        }
     }
 
     private bool ShouldHandleStateUpdate(EventNodeInst<TState, TEvent> eventNodeInst)

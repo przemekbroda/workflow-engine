@@ -3,9 +3,9 @@ using TestEventSourcingApproach.Trees.FirstTree.Nodes;
 
 namespace TestEventSourcingApproach.Trees.FirstTree;
 
-public sealed class FirstEventSourceTree(IServiceProvider serviceProvider) : EventSourceTree<TestState, Event>(serviceProvider)
+public class FirstTreeProvider(IServiceProvider serviceProvider) : TreeProvider<TestState, Event>(serviceProvider)
 {
-    protected override EventNode<TestState, Event> ProvideTree()
+    public override EventNode<TestState, Event> ProvideTree()
     {
         return new EventNode<TestState, Event>(
             [
@@ -29,8 +29,8 @@ public sealed class FirstEventSourceTree(IServiceProvider serviceProvider) : Eve
                         "ResultSaveError",
                     ],
                     []
-                    )
+                )
             ]
-            );
+        );
     }
 }
