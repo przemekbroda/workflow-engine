@@ -1,6 +1,6 @@
 using EventSourcingEngine;
 
-namespace TestEventSourcingApproach.Trees.FirstTree.Nodes;
+namespace ExampleApp.Trees.FirstTree.Nodes;
 
 public class EventExecutorNode : BaseNodeExecutor<TestState, Event>
 {

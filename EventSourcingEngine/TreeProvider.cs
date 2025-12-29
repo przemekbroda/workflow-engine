@@ -1,3 +1,5 @@
+using EventSourcingEngine.Exceptions;
+
 namespace EventSourcingEngine;
 
 public abstract class TreeProvider<TState, TEvent> 
@@ -6,7 +8,7 @@ public abstract class TreeProvider<TState, TEvent>
 {
     private readonly IServiceProvider _serviceProvider;
 
-    public TreeProvider(IServiceProvider serviceProvider)
+    protected TreeProvider(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
         ValidateTree();
@@ -23,18 +25,29 @@ public abstract class TreeProvider<TState, TEvent>
     
     private void ValidateNodeType(EventNode<TState, TEvent> eventNode)
     {
+        if (eventNode.HandlesEvents.Count == 0)
+        {
+            throw new EventSourcingEngineTreeValidationException("Node must handle at least one event");
+        }
+
+        if (eventNode.ProducesEvents.Count == 0)
+        {
+            throw new EventSourcingEngineTreeValidationException("Node must produce at least one event");
+        }
+        
         if (!typeof(INodeExecutor<TState, TEvent>).IsAssignableFrom(eventNode.Executor))
         {
-            throw new Exception("dupa zbita");
+            throw new EventSourcingEngineTreeValidationException("Executor must implement INodeExecutor");
         }
         
         if (_serviceProvider.GetService(eventNode.Executor) is null)
         {
-            throw new Exception($"Executor has not been provided to DI");
+            throw new EventSourcingEngineTreeValidationException($"Executor {eventNode.Executor.Name} has not been provided to DI");
         }
 
         CheckForDuplicatedHandledEventsInNextExecutor(eventNode);
-
+        CheckNextExecutorsHandleProducedEvents(eventNode);
+        
         foreach (var nextExecutor in eventNode.NextExecutors)
         {
             ValidateNodeType(nextExecutor);
@@ -48,7 +61,23 @@ public abstract class TreeProvider<TState, TEvent>
         {
             if (!eventNames.Add(producesEventName))
             {
-                throw new Exception("asda");
+                throw new EventSourcingEngineTreeValidationException($"Child nodes handles same event ({producesEventName}) as other node with the same parent node");
+            }
+        }
+    }
+
+    private static void CheckNextExecutorsHandleProducedEvents(EventNode<TState, TEvent> eventNode)
+    {
+        var producedEvents = eventNode.ProducesEvents;
+        
+        foreach (var nextExecutor in eventNode.NextExecutors)
+        {
+            foreach (var nextExecutorEventName in nextExecutor.HandlesEvents)
+            {
+                if (!producedEvents.Remove(nextExecutorEventName))
+                {
+                    throw new EventSourcingEngineTreeValidationException($"Node with an executor {nextExecutor.Executor.Name} handles event {nextExecutorEventName} that is not produced by parent node with an executor {eventNode.Executor.Name}");
+                }
             }
         }
     }

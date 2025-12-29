@@ -1,4 +1,4 @@
-namespace TestEventSourcingApproach.Trees.FirstTree;
+namespace ExampleApp.Trees.FirstTree;
 
 public record TestState
 {

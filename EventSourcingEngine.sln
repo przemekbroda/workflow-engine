@@ -1,8 +1,10 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestEventSourcingApproach", "TestEventSourcingApproach\TestEventSourcingApproach.csproj", "{1DEC516F-424E-4C10-B1D9-DD2333194B84}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleApp", "ExampleApp\ExampleApp.csproj", "{1DEC516F-424E-4C10-B1D9-DD2333194B84}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventSourcingEngine", "EventSourcingEngine\EventSourcingEngine.csproj", "{EFBD594A-862A-42F5-8C5D-CDE0C860FEAB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventSourcingEngine.UnitTests", "EventSourcingEngine.UnitTests\EventSourcingEngine.UnitTests.csproj", "{03C768F9-5D12-4AF6-A46F-6C1BCE430784}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +20,9 @@ Global
 		{EFBD594A-862A-42F5-8C5D-CDE0C860FEAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EFBD594A-862A-42F5-8C5D-CDE0C860FEAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EFBD594A-862A-42F5-8C5D-CDE0C860FEAB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{03C768F9-5D12-4AF6-A46F-6C1BCE430784}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{03C768F9-5D12-4AF6-A46F-6C1BCE430784}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{03C768F9-5D12-4AF6-A46F-6C1BCE430784}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{03C768F9-5D12-4AF6-A46F-6C1BCE430784}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

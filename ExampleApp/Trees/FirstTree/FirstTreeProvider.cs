@@ -1,36 +1,38 @@
 using EventSourcingEngine;
-using TestEventSourcingApproach.Trees.FirstTree.Nodes;
+using ExampleApp.Trees.FirstTree.Nodes;
 
-namespace TestEventSourcingApproach.Trees.FirstTree;
+namespace ExampleApp.Trees.FirstTree;
 
 public class FirstTreeProvider(IServiceProvider serviceProvider) : TreeProvider<TestState, Event>(serviceProvider)
 {
     public override EventNode<TestState, Event> ProvideTree()
     {
-        return new EventNode<TestState, Event>(
-            [
+        return new EventNode<TestState, Event>
+        {
+            HandlesEvents = [
                 "AwaitingExecution",
                 "AwaitingResult"
             ],
-            typeof(EventExecutorNode), 
-            [
+            Executor = typeof(EventExecutorNode),
+            ProducesEvents = [
                 "AwaitingResult",
                 "ResultFetched"
             ],
-            [
-                new EventNode<TestState, Event>(
-                    [
+            NextExecutors = [
+                new EventNode<TestState, Event>
+                {
+                    HandlesEvents = [
                         "ResultFetched",
                         "ResultSaveError"
                     ],
-                    typeof(ResultSaverNode), 
-                    [
+                    Executor = typeof(ResultSaverNode),
+                    ProducesEvents = [
                         "ResultSaved",
                         "ResultSaveError",
                     ],
-                    []
-                )
+                    NextExecutors = []
+                }
             ]
-        );
+        };
     }
 }
