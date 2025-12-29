@@ -45,9 +45,9 @@ public class ValidTreeProvider(IServiceProvider serviceProvider) : TreeProvider<
                         },
                         new EventNode<TreeState, TreeEvent>
                         {
-                            HandlesEvents = ["Event43"],
+                            HandlesEvents = ["Event43", "Event62"],
                             Executor = typeof(Node6),
-                            ProducesEvents = ["Event61"],
+                            ProducesEvents = ["Event61", "Event62"],
                             NextExecutors = []
                         }
                     ]

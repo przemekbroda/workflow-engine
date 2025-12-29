@@ -74,7 +74,7 @@ public abstract class TreeProvider<TState, TEvent>
         {
             foreach (var nextExecutorEventName in nextExecutor.HandlesEvents)
             {
-                if (!producedEvents.Remove(nextExecutorEventName))
+                if (!producedEvents.Remove(nextExecutorEventName) && !nextExecutor.HandlesEvents.Contains(nextExecutorEventName))
                 {
                     throw new EventSourcingEngineTreeValidationException($"Node with an executor {nextExecutor.Executor.Name} handles event {nextExecutorEventName} that is not produced by parent node with an executor {eventNode.Executor.Name}");
                 }

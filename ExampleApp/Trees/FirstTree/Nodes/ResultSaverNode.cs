@@ -21,7 +21,7 @@ public class ResultSaverNode : BaseNodeExecutor<TestState, Event>
         throw new Exception($"unhandled event: {e.EventName}");
     }
 
-    public override void UpdateState(Event e)
+    protected override void UpdateState(Event e)
     {
         if (e.EventName == "ResultSaveError")
         {

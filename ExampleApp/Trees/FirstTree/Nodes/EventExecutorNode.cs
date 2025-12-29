@@ -9,7 +9,7 @@ public class EventExecutorNode : BaseNodeExecutor<TestState, Event>
         return new Event("ResultFetched", 500);
     }
 
-    public override void UpdateState(Event e)
+    protected override void UpdateState(Event e)
     {
         if (e.EventName == "AwaitingResult")
         {

@@ -9,8 +9,9 @@ public abstract class BaseNodeExecutor<TState, TEvent> : INodeExecutor<TState, T
     public required Cursor<TState, TEvent> Cursor { get; set; }
     public required HashSet<string> ProducesEvents { get; set; }
     public required HashSet<string> HandlesEvents { get; set; }
+
+    protected abstract void UpdateState(TEvent e);
     
-    public abstract void UpdateState(TEvent e);
     public abstract Task<TEvent> ExecuteAsync(TEvent e, CancellationToken cancellationToken);
 
     public void TryUpdateState(TEvent e)
