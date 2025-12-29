@@ -84,6 +84,8 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
     {
         eventNodeInst.Executor.Cursor = _cursor;
         
+        // TODO maybe we should throw an exception when we cannot update state with a given node because
+        // that would mean something has changed in the tree and cannot be handled properly
         if (ShouldHandleStateUpdate(eventNodeInst))
         {
             eventNodeInst.Executor.TryUpdateState(_cursor.CurrentEvent);
