@@ -34,7 +34,6 @@ app.MapGet("/execute-tree",  async (IEventSourceTree<TestState, Event> firstEven
             new("AwaitingResult", 3),
             new("ResultFetched", 600),
         ];
-        
         // List<Event> events =
         // [
         //     new("AwaitingExecution", 300),
@@ -52,6 +51,25 @@ app.MapGet("/execute-tree",  async (IEventSourceTree<TestState, Event> firstEven
         // List<Event> events =
         // [
         //     new("AwaitingExecution", 300),
+        // ];
+        // List<Event> events =
+        // [
+        //     new("AwaitingExecution", 300),
+        //     new("AwaitingResult", 1),
+        //     new("AwaitingResult", 2),
+        //     new("AwaitingResult", 3),
+        //     new("ResultFetched", 600),
+        //     new("ResultSaveError", 600),
+        // ];
+        // List<Event> events =
+        // [
+        //     new("AwaitingExecution", 300),
+        //     new("AwaitingResult", 1),
+        //     new("AwaitingResult", 2),
+        //     new("AwaitingResult", 3),
+        //     new("ResultFetched", 600),
+        //     new("ResultSaveError", 600),
+        //     new("ResultSaved", 600),
         // ];
 
         events.Reverse();
