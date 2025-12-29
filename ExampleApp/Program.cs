@@ -34,6 +34,25 @@ app.MapGet("/execute-tree",  async (IEventSourceTree<TestState, Event> firstEven
             new("AwaitingResult", 600),
             new("ResultFetched", 600),
         ];
+        
+        // List<Event> events =
+        // [
+        //     new("AwaitingExecution", 300),
+        //     new("AwaitingResult", 600),
+        //     new("AwaitingResult", 600),
+        //     new("AwaitingResult", 600),
+        // ];
+        //
+        // List<Event> events =
+        // [
+        //     new("AwaitingExecution", 300),
+        //     new("ResultFetched", 600),
+        // ];
+        //
+        // List<Event> events =
+        // [
+        //     new("AwaitingExecution", 300),
+        // ];
 
         events.Reverse();
 
@@ -42,7 +61,9 @@ app.MapGet("/execute-tree",  async (IEventSourceTree<TestState, Event> firstEven
             Balance = (int)payload!
         };
         
-        await firstEventSourceTree.ExecuteTree(events, stateInitializer, cancellationToken);
+        var finishedWithEvent = await firstEventSourceTree.ExecuteTree(events, stateInitializer, cancellationToken);
+        
+        Console.WriteLine($"Finished with event {finishedWithEvent}");
     })
     .WithName("GetWeatherForecast")
     .WithOpenApi();

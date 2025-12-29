@@ -11,5 +11,5 @@ public interface IEventSourceTree<TState, TEvent>
     /// <param name="initialCursorEvents"></param>
     /// <param name="stateInitializer"></param>
     /// <param name="cancellationToken"></param>
-    public Task ExecuteTree(IEnumerable<TEvent> initialCursorEvents, Func<object?, TState> stateInitializer, CancellationToken cancellationToken);
+    public Task<Event> ExecuteTree(IEnumerable<TEvent> initialCursorEvents, Func<object?, TState> stateInitializer, CancellationToken cancellationToken);
 }
