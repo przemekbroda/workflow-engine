@@ -1,6 +1,7 @@
 using EventSourcingEngine;
 using ExampleApp.Trees.FirstTree;
 using ExampleApp.Trees.FirstTree.Nodes;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,7 +25,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapGet("/execute-tree",  async (IEventSourceTree<TestState, Event> firstEventSourceTree, CancellationToken cancellationToken) =>
+app.MapGet("/execute-tree",  async ([FromServices] IEventSourceTree<TestState, Event, FirstTreeProvider> firstEventSourceTree, CancellationToken cancellationToken) =>
     {
         List<Event> events =
         [

@@ -4,13 +4,15 @@ using Microsoft.Extensions.Logging;
 
 namespace EventSourcingEngine;
 
-internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent>
+internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree<TState, TEvent, TTreeProvider>
     where TState : new()
     where TEvent : Event
+    where TTreeProvider : TreeProvider<TState, TEvent>
+
 {
     private readonly EventNode<TState, TEvent> _eventNode;
     private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<EventSourceTree<TState, TEvent>> _logger;
+    private readonly ILogger<EventSourceTree<TState, TEvent, TTreeProvider>> _logger;
     
     private EventNodeInst<TState, TEvent> _eventNodeInst = null!;
     private Cursor<TState, TEvent> _cursor = null!;
@@ -18,7 +20,7 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
     public EventSourceTree(
         IServiceProvider serviceProvider, 
         TreeProvider<TState, TEvent> treeProvider,
-        ILogger<EventSourceTree<TState, TEvent>> logger)
+        ILogger<EventSourceTree<TState, TEvent, TTreeProvider>> logger)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
@@ -36,7 +38,7 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
     ///     It is being executed only once just after the ExecuteTree method call. If the first event's payload is null,
     ///     then a passed object to the function will also be null
     /// </param>
-    public async Task<Event> ExecuteTree(IEnumerable<TEvent> initialCursorEvents, Func<object?, TState> stateInitializer, CancellationToken cancellationToken)
+    public async Task<ExecuteTreeResult<TState, TEvent>> ExecuteTree(IEnumerable<TEvent> initialCursorEvents, Func<object?, TState> stateInitializer, CancellationToken cancellationToken)
     {
         _cursor = SetupCursor(initialCursorEvents, stateInitializer);
         
@@ -111,27 +113,13 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
         return ResumeTree(nextExecutor);
     }
 
-    private EventNodeInst<TState, TEvent>? TryResumeInNextExecutors(EventNodeInst<TState, TEvent> eventNodeInst)
-    {
-        foreach (var nextExecutor in eventNodeInst.NextExecutors)
-        {
-            var toResume = ResumeTree(nextExecutor);
-            if (toResume is not null)
-            {
-                return toResume;
-            }
-        }
-
-        return null;
-    }
-
     /// <summary>
     /// 
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <exception cref="EventSourceEngineResumeException">Thrown when could not find a node that can handle the latest event</exception>
     /// <exception cref="OperationCanceledException">The token has had cancellation requested.</exception>
-    private async Task<TEvent> Resume(CancellationToken cancellationToken)
+    private async Task<ExecuteTreeResult<TState, TEvent>> Resume(CancellationToken cancellationToken)
     {
         var eventNodeInst = ResumeTree(_eventNodeInst);
 
@@ -149,7 +137,7 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
     /// <param name="eventNode"></param>
     /// <param name="cancellationToken"></param>
     /// <exception cref="OperationCanceledException">The token has had cancellation requested.</exception>
-    private async Task<TEvent> TryExecuteNode(EventNodeInst<TState, TEvent> eventNode, CancellationToken cancellationToken)
+    private async Task<ExecuteTreeResult<TState, TEvent>> TryExecuteNode(EventNodeInst<TState, TEvent> eventNode, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         
@@ -174,7 +162,7 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
             }
         }
         
-        return _cursor.CurrentEvent;
+        return new ExecuteTreeResult<TState, TEvent>(_cursor.State, _cursor.CurrentEvent);
     }
 
     private EventNodeInst<TState, TEvent> InstantiateNode(EventNode<TState, TEvent> eventNode)
