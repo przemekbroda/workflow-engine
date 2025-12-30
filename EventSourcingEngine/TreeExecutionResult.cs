@@ -2,4 +2,4 @@
 
 public record TreeExecutionResult<TState, TEvent>(TState State, TEvent Event) 
     where TState : new() 
-    where TEvent : Event;
+    where TEvent : class;

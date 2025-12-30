@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.RegisterTree<TestState, Event, FirstTreeProvider>();
+builder.Services.RegisterTree<TestState, FirstTreeEvent, FirstTreeProvider>();
 builder.Services.AddTransient<EventExecutorNode>();
 builder.Services.AddTransient<ResultSaverNode>();
 
@@ -25,15 +25,15 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapGet("/execute-tree",  async ([FromServices] IEventSourceTree<TestState, Event, FirstTreeProvider> firstEventSourceTree, CancellationToken cancellationToken) =>
+app.MapGet("/execute-tree",  async ([FromServices] IEventSourceTree<TestState, FirstTreeEvent, FirstTreeProvider> firstEventSourceTree, CancellationToken cancellationToken) =>
     {
-        List<Event> events =
+        List<FirstTreeEvent> events =
         [
-            new("AwaitingExecution", 300),
-            new("AwaitingResult", 1),
-            new("AwaitingResult", 2),
-            new("AwaitingResult", 3),
-            new("ResultFetched", 600),
+            new FirstTreeEvent.AwaitingExecution(300),
+            new FirstTreeEvent.AwaitingResult(1),
+            new FirstTreeEvent.AwaitingResult(2),
+            new FirstTreeEvent.AwaitingResult(3),
+            // new FirstTreeEvent.ResultFetched(600),
         ];
         // List<Event> events =
         // [
@@ -75,9 +75,14 @@ app.MapGet("/execute-tree",  async ([FromServices] IEventSourceTree<TestState, E
 
         events.Reverse();
 
-        var stateInitializer = (object? payload) => new TestState
+        var stateInitializer = (FirstTreeEvent e) =>
         {
-            Balance = (int)payload!
+            if (e is not FirstTreeEvent.AwaitingExecution execution) throw new Exception();
+            
+            return new TestState
+            {
+                Balance = execution.Balance
+            };
         };
         
         var finishedWithEvent = await firstEventSourceTree.ExecuteTree(events, stateInitializer, cancellationToken);

@@ -4,7 +4,7 @@ namespace EventSourcingEngine;
 
 public abstract class TreeProvider<TState, TEvent> 
     where TState : new()
-    where TEvent : Event
+    where TEvent : class
 {
     private readonly IServiceProvider _serviceProvider;
 
@@ -56,10 +56,10 @@ public abstract class TreeProvider<TState, TEvent>
 
     private static void CheckForDuplicatedHandledEventsInNextExecutor(EventNode<TState, TEvent> eventNode)
     {
-        var eventNames = new HashSet<string>();
+        var eventTypes = new HashSet<Type>();
         foreach (var producesEventName in eventNode.NextExecutors.Select(ne => ne.HandlesEvents).SelectMany(x => x))
         {
-            if (!eventNames.Add(producesEventName))
+            if (!eventTypes.Add(producesEventName))
             {
                 throw new EventSourcingEngineTreeValidationException($"Child nodes handles same event ({producesEventName}) as other node with the same parent node");
             }

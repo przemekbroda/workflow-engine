@@ -6,7 +6,7 @@ namespace EventSourcingEngine;
 
 internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree<TState, TEvent, TTreeProvider>
     where TState : new()
-    where TEvent : Event
+    where TEvent : class
     where TTreeProvider : TreeProvider<TState, TEvent>
 
 {
@@ -38,7 +38,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
     ///     It is being executed only once just after the ExecuteTree method call. If the first event's payload is null,
     ///     then a passed object to the function will also be null
     /// </param>
-    public async Task<ExecuteTreeResult<TState, TEvent>> ExecuteTree(IEnumerable<TEvent> initialCursorEvents, Func<object?, TState> stateInitializer, CancellationToken cancellationToken)
+    public async Task<ExecuteTreeResult<TState, TEvent>> ExecuteTree(IEnumerable<TEvent> initialCursorEvents, Func<TEvent, TState> stateInitializer, CancellationToken cancellationToken)
     {
         _cursor = SetupCursor(initialCursorEvents, stateInitializer);
         
@@ -69,7 +69,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
         _eventNodeInst = InstantiateNode(_eventNode);
     }
 
-    private Cursor<TState, TEvent> SetupCursor(IEnumerable<TEvent> existingEvents, Func<object?, TState> stateInitializer)
+    private Cursor<TState, TEvent> SetupCursor(IEnumerable<TEvent> existingEvents, Func<TEvent, TState> stateInitializer)
     {
         var treeCursor = new Cursor<TState, TEvent>
         {
@@ -77,7 +77,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
             InitEvents = new Stack<TEvent>(existingEvents)
         };
 
-        treeCursor.State = stateInitializer(treeCursor.CurrentEvent.Payload);
+        treeCursor.State = stateInitializer(treeCursor.CurrentEvent);
 
         return treeCursor;
     }
@@ -91,14 +91,14 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
             eventNodeInst.Executor.TryUpdateState(_cursor.CurrentEvent);
         }
         
-        if (_cursor.InitEvents.Count == 1 && eventNodeInst.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.EventName))
+        if (_cursor.InitEvents.Count == 1 && eventNodeInst.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.GetType()))
         {
             return eventNodeInst;
         }
         
         List<EventNodeInst<TState, TEvent>> nextExecutors = [..eventNodeInst.NextExecutors, eventNodeInst];
 
-        var nextExecutor = nextExecutors.SingleOrDefault(ne => ne.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.EventName));
+        var nextExecutor = nextExecutors.SingleOrDefault(ne => ne.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.GetType()));
 
         if (nextExecutor is null)
         {
@@ -143,7 +143,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
         
         eventNode.Executor.Cursor = _cursor;
         
-        if (eventNode.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.EventName))
+        if (eventNode.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.GetType()))
         {
             var generatedEvent = await eventNode.Executor.ExecuteAsync(_cursor.CurrentEvent, cancellationToken);
 
@@ -156,7 +156,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
         {
             nextExecutor.Executor.Cursor = _cursor;
             
-            if (nextExecutor.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.EventName))
+            if (nextExecutor.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.GetType()))
             {
                 return await TryExecuteNode(nextExecutor, cancellationToken);
             }
@@ -184,7 +184,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
 
     private bool ShouldHandleStateUpdate(EventNodeInst<TState, TEvent> eventNodeInst)
     {
-        return eventNodeInst.Executor.ProducesEvents.Contains(_cursor.CurrentEvent.EventName);
+        return eventNodeInst.Executor.ProducesEvents.Contains(_cursor.CurrentEvent.GetType());
     }
     
     private void UpdateCursorWithNewEvent(TEvent generatedEvent)

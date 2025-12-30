@@ -3,32 +3,32 @@ using ExampleApp.Trees.FirstTree.Nodes;
 
 namespace ExampleApp.Trees.FirstTree;
 
-public class FirstTreeProvider(IServiceProvider serviceProvider) : TreeProvider<TestState, Event>(serviceProvider)
+public class FirstTreeProvider(IServiceProvider serviceProvider) : TreeProvider<TestState, FirstTreeEvent>(serviceProvider)
 {
-    public override EventNode<TestState, Event> ProvideTree()
+    public override EventNode<TestState, FirstTreeEvent> ProvideTree()
     {
-        return new EventNode<TestState, Event>
+        return new EventNode<TestState, FirstTreeEvent>
         {
             HandlesEvents = [
-                "AwaitingExecution",
-                "AwaitingResult"
+                typeof(FirstTreeEvent.AwaitingExecution),
+                typeof(FirstTreeEvent.AwaitingResult)
             ],
             Executor = typeof(EventExecutorNode),
             ProducesEvents = [
-                "AwaitingResult",
-                "ResultFetched"
+                typeof(FirstTreeEvent.AwaitingResult),
+                typeof(FirstTreeEvent.ResultFetched)
             ],
             NextExecutors = [
-                new EventNode<TestState, Event>
+                new EventNode<TestState, FirstTreeEvent>
                 {
                     HandlesEvents = [
-                        "ResultFetched",
-                        "ResultSaveError"
+                        typeof(FirstTreeEvent.ResultFetched),
+                        typeof(FirstTreeEvent.ResultSaveError)
                     ],
                     Executor = typeof(ResultSaverNode),
                     ProducesEvents = [
-                        "ResultSaved",
-                        "ResultSaveError",
+                        typeof(FirstTreeEvent.ResultSaved),
+                        typeof(FirstTreeEvent.ResultSaveError),
                     ],
                     NextExecutors = []
                 }
