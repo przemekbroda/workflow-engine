@@ -8,43 +8,46 @@ public class InvalidExecutorTreeProvider(IServiceProvider serviceProvider) : Tre
     {
         return new EventNode<TreeState, TreeEvent>
         {
-            HandlesEvents = ["Event1"],
+            HandlesEvents = [typeof(TreeEvent.Event1)],
             Executor = typeof(Node1),
-            ProducesEvents = ["Event21", "Event22"],
-            NextExecutors = [
+            ProducesEvents = [typeof(TreeEvent.Event2), typeof(TreeEvent.Event3)],
+            NextExecutors =
+            [
                 new EventNode<TreeState, TreeEvent>
                 {
-                    HandlesEvents = ["Event21"],
+                    HandlesEvents = [typeof(TreeEvent.Event2)],
                     Executor = typeof(Node2),
-                    ProducesEvents = ["Event31"],
-                    NextExecutors = [
+                    ProducesEvents = [typeof(TreeEvent.Event5)],
+                    NextExecutors =
+                    [
                         new EventNode<TreeState, TreeEvent>
                         {
-                            HandlesEvents = ["Event31"],
+                            HandlesEvents = [typeof(TreeEvent.Event5)],
                             Executor = typeof(Node3),
-                            ProducesEvents = ["Node3Event"],
+                            ProducesEvents = [typeof(TreeEvent.Event6)],
                             NextExecutors = []
                         }
                     ]
                 },
                 new EventNode<TreeState, TreeEvent>
                 {
-                    HandlesEvents = ["Event22"],
+                    HandlesEvents = [typeof(TreeEvent.Event3)],
                     Executor = typeof(Node4),
-                    ProducesEvents = ["Event41", "Event42"],
-                    NextExecutors = [
+                    ProducesEvents = [typeof(TreeEvent.Event7), typeof(TreeEvent.Event8), typeof(TreeEvent.Event9)],
+                    NextExecutors =
+                    [
                         new EventNode<TreeState, TreeEvent>
                         {
-                            HandlesEvents = ["Event41"],
+                            HandlesEvents = [typeof(TreeEvent.Event7), typeof(TreeEvent.Event8)],
                             Executor = typeof(Node5),
-                            ProducesEvents = ["Event51", "Event52"],
+                            ProducesEvents = [typeof(TreeEvent.Event10), typeof(TreeEvent.Event11)],
                             NextExecutors = []
                         },
                         new EventNode<TreeState, TreeEvent>
                         {
-                            HandlesEvents = ["Event42"],
+                            HandlesEvents = [typeof(TreeEvent.Event9)],
                             Executor = typeof(NotImplementingNode),
-                            ProducesEvents = ["Event61"],
+                            ProducesEvents = [typeof(TreeEvent.Event12)],
                             NextExecutors = []
                         }
                     ]
