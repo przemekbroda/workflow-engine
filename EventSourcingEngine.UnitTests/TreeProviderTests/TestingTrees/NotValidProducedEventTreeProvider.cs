@@ -2,7 +2,7 @@
 
 namespace EventSourcingEngine.UnitTests.TreeProviderTests.TestingTrees;
 
-public class NotValidProducedEventTreeProvider(IServiceProvider serviceProvider) : TreeProvider<TreeState, TreeEvent>(serviceProvider)
+public class NotValidProducedEventTreeProvider : TreeProvider<TreeState, TreeEvent>
 {
     public override EventNode<TreeState, TreeEvent> ProvideTree()
     {

@@ -1,3 +1,4 @@
+using System.Data;
 using System.Text.Json.Serialization;
 using EventSourcingEngine;
 using ExampleApp.Postgres;
@@ -13,8 +14,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.RegisterTree<TestState, FirstTreeEvent, FirstTreeProvider>();
-builder.Services.AddTransient<EventExecutorNode>();
-builder.Services.AddTransient<ResultSaverNode>();
+builder.Services.AddScoped<EventExecutorNode>();
+builder.Services.AddScoped<ResultSaverNode>();
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
@@ -53,8 +54,6 @@ app.MapPost("/process", async (AppDbContext dbContext) =>
             }
         };
         
-        
-
         dbContext.ProcessRequests.Add(processRequest);
         
         await dbContext.SaveChangesAsync();
@@ -66,28 +65,50 @@ app.MapPost("/process", async (AppDbContext dbContext) =>
 app.MapGet("/process/{id:long}", async (AppDbContext dbContext, long id) =>
 {
     var result = await dbContext.ProcessRequests
-        .Include(x => x.ProcessRequestEvents)
+        .FromSql($"""SELECT * FROM "ProcessRequests" """)
         .FirstOrDefaultAsync(x => x.Id == id);
 
     return TypedResults.Ok(result);
 });
 
-app.MapPatch("/process/{id:long}", async (AppDbContext dbContext, long id) =>
+app.MapPatch("/process/{id:long}", async (long id, AppDbContext dbContext, IEventSourceTree<TestState, FirstTreeEvent, FirstTreeProvider> eventSource) =>
 {
-    using (var transaction = dbContext.Database.BeginTransaction())
+    using (var transaction = dbContext.Database.BeginTransaction(IsolationLevel.ReadCommitted))
     {
         try
         {
             var process = await dbContext.ProcessRequests
+                .FromSql($"""SELECT * FROM "ProcessRequests" FOR UPDATE SKIP LOCKED""")
                 .Include(x => x.ProcessRequestEvents)
                 .FirstOrDefaultAsync(x => x.Id == id);
 
             if (process is null)
             {
-                return TypedResults.NotFound(); 
+                return TypedResults.Ok(); 
             }
-            
-            
+
+            var events = (process.ProcessRequestEvents ?? [])
+                .Select(dbEvent => dbEvent.GetTreeEvent())
+                .OrderByDescending(e => e.Index)
+                .ToList();
+
+            var result = await eventSource.ExecuteTree(events, (e) =>
+            {
+                if (e is not FirstTreeEvent.AwaitingExecution execution)
+                {
+                    throw new Exception();
+                }
+
+
+                return new TestState
+                {
+                    Balance = execution.Balance,
+                    AwaitingResult = false,
+                    ProcessRequestId = process.Id,
+                };
+            }, CancellationToken.None);
+
+            Console.WriteLine($"Finished with event {result}");
         }
         catch (Exception e)
         {

@@ -1,7 +1,7 @@
 namespace EventSourcingEngine;
 
 public interface INodeExecutor<TState, TEvent> 
-    where TState : new()
+    where TState : class
     where TEvent : class
 {
     public Cursor<TState, TEvent> Cursor { get; set; }

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace EventSourcingEngine;
 
 internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree<TState, TEvent, TTreeProvider>
-    where TState : new()
+    where TState : class
     where TEvent : class
     where TTreeProvider : TreeProvider<TState, TEvent>
 
@@ -73,7 +73,6 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
     {
         var treeCursor = new Cursor<TState, TEvent>
         {
-            State = new TState(),
             InitEvents = new Stack<TEvent>(existingEvents)
         };
 

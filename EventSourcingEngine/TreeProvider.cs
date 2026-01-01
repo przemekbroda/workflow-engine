@@ -3,14 +3,11 @@ using EventSourcingEngine.Exceptions;
 namespace EventSourcingEngine;
 
 public abstract class TreeProvider<TState, TEvent> 
-    where TState : new()
+    where TState : class
     where TEvent : class
 {
-    private readonly IServiceProvider _serviceProvider;
-
-    protected TreeProvider(IServiceProvider serviceProvider)
+    protected TreeProvider()
     {
-        _serviceProvider = serviceProvider;
         ValidateTree();
     }
 
@@ -40,10 +37,10 @@ public abstract class TreeProvider<TState, TEvent>
             throw new EventSourcingEngineTreeValidationException("Executor must implement INodeExecutor");
         }
         
-        if (_serviceProvider.GetService(eventNode.Executor) is null)
-        {
-            throw new EventSourcingEngineTreeValidationException($"Executor {eventNode.Executor.Name} has not been provided to DI");
-        }
+        // if (_serviceProvider.GetService(eventNode.Executor) is null)
+        // {
+        //     throw new EventSourcingEngineTreeValidationException($"Executor {eventNode.Executor.Name} has not been provided to DI");
+        // }
 
         CheckForDuplicatedHandledEventsInNextExecutor(eventNode);
         CheckNextExecutorsHandleProducedEvents(eventNode);

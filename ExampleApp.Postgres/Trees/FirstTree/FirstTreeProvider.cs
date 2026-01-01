@@ -3,7 +3,7 @@ using ExampleApp.Postgres.Trees.FirstTree.Nodes;
 
 namespace ExampleApp.Postgres.Trees.FirstTree;
 
-public class FirstTreeProvider(IServiceProvider serviceProvider) : TreeProvider<TestState, FirstTreeEvent>(serviceProvider)
+public class FirstTreeProvider : TreeProvider<TestState, FirstTreeEvent>
 {
     public override EventNode<TestState, FirstTreeEvent> ProvideTree()
     {
