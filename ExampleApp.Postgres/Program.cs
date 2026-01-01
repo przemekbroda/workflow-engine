@@ -65,7 +65,6 @@ app.MapPost("/process", async (AppDbContext dbContext) =>
 app.MapGet("/process/{id:long}", async (AppDbContext dbContext, long id) =>
 {
     var result = await dbContext.ProcessRequests
-        .FromSql($"""SELECT * FROM "ProcessRequests" """)
         .FirstOrDefaultAsync(x => x.Id == id);
 
     return TypedResults.Ok(result);
