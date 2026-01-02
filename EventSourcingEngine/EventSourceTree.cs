@@ -149,6 +149,8 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
             UpdateCursorWithNewEvent(generatedEvent);
 
             eventNode.Executor.TryUpdateState(generatedEvent);
+            
+            await eventNode.Executor.AfterExecutionAndStateUpdate(generatedEvent, cancellationToken);
         }
         
         foreach (var nextExecutor in eventNode.NextExecutors)

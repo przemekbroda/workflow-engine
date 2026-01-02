@@ -87,7 +87,7 @@ app.MapPatch("/process/{id:long}", async (long id, AppDbContext dbContext, IEven
             }
 
             var events = (process.ProcessRequestEvents ?? [])
-                .Select(dbEvent => dbEvent.GetTreeEvent())
+                .Select(dbEvent => dbEvent.ToTreeEvent())
                 .OrderByDescending(e => e.Index)
                 .ToList();
 

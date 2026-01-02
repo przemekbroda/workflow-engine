@@ -6,30 +6,11 @@ namespace ExampleApp.Postgres.Trees.FirstTree.Nodes;
 
 public class EventExecutorNode(AppDbContext dbContext) : BaseNodeExecutor<TestState, FirstTreeEvent>
 {
-    public override async Task<FirstTreeEvent> ExecuteAsync(FirstTreeEvent e, CancellationToken cancellationToken)
+    public override async Task<FirstTreeEvent> ExecuteAsync(FirstTreeEvent @event, CancellationToken cancellationToken)
     {
-        var amount = 500;
-
-        await Task.Delay(TimeSpan.FromSeconds(10));
+        await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
         
-        var dbEvent = new ProcessRequestEvent
-        {
-            EventName = nameof(FirstTreeEvent.ResultFetched),
-            CreatedAt = DateTime.UtcNow,
-            Index = e.Index + 1,
-            ProcessRequestEventPayload = new ResultFetched(amount),
-            ProcessRequestId = Cursor.State.ProcessRequestId
-        };
-
-        dbContext.ProcessRequestEvents.Add(dbEvent);
-        
-        // we are not passing the cancellation token to those calls because if we finished some processing, we should save results to DB
-        // so we don't do the same actions again in later time
-        await dbContext.ProcessRequests.Where(r => r.Id == Cursor.State.ProcessRequestId)
-            .ExecuteUpdateAsync(setter => setter.SetProperty(r => r.LastModifiedAt, DateTime.UtcNow));
-        await dbContext.SaveChangesAsync();
-        
-        return dbEvent.GetTreeEvent();
+        return new FirstTreeEvent.ResultFetched(500, @event.Index + 1);
     }
 
     protected override void UpdateState(FirstTreeEvent e)
@@ -44,5 +25,16 @@ public class EventExecutorNode(AppDbContext dbContext) : BaseNodeExecutor<TestSt
                 Cursor.State.Balance += resultFetched.Amount;
                 break;
         }
+    }
+
+    // we are not passing the cancellation token to those calls because if we finished some processing, we should save results to DB
+    // so we don't do the same actions again in later time
+    public override async Task AfterExecutionAndStateUpdate(FirstTreeEvent @event, CancellationToken _)
+    {
+        var dbEvent = ProcessRequestEvent.FromTreeEvent(@event, Cursor.State.ProcessRequestId, DateTime.UtcNow);
+        dbContext.ProcessRequestEvents.Add(dbEvent);
+        await dbContext.ProcessRequests.Where(r => r.Id == Cursor.State.ProcessRequestId)
+            .ExecuteUpdateAsync(setter => setter.SetProperty(r => r.LastModifiedAt, DateTime.UtcNow));
+        await dbContext.SaveChangesAsync();
     }
 }

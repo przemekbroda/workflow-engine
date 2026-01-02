@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using ExampleApp.Postgres.Trees.FirstTree;
+using Microsoft.VisualBasic.CompilerServices;
 
 namespace ExampleApp.Postgres.Models;
 
@@ -16,7 +17,7 @@ public class ProcessRequestEvent
     public ProcessRequest ProcessRequest { get; set; } = null!;
     public long ProcessRequestId { get; set; }
 
-    public FirstTreeEvent GetTreeEvent()
+    public FirstTreeEvent ToTreeEvent()
     {
         return EventName switch
         {
@@ -26,6 +27,23 @@ public class ProcessRequestEvent
             nameof(FirstTreeEvent.ResultSaveError) => new FirstTreeEvent.ResultSaveError(Index),
             nameof(FirstTreeEvent.ResultSaved) => new FirstTreeEvent.ResultSaved(Index),
             _ => throw new Exception("Unknown event name")
+        };
+    }
+
+    public static ProcessRequestEvent FromTreeEvent(FirstTreeEvent e, long ProcessRequestId, DateTime createdAt)
+    {
+        return new ProcessRequestEvent
+        {
+            EventName = e.GetType().Name,
+            ProcessRequestEventPayload = e switch
+            {
+                FirstTreeEvent.AwaitingExecution execution => new AwaitingExecution(execution.Balance),
+                FirstTreeEvent.ResultFetched result => new ResultFetched(result.Amount),
+                _ => null
+            },
+            CreatedAt = createdAt,
+            Index = e.Index,
+            ProcessRequestId = ProcessRequestId
         };
     }
 }
