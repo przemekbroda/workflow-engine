@@ -5,6 +5,7 @@ public interface IEventSourceTree<TState, TEvent, TTreeProvider>
     where TEvent : class
     where TTreeProvider : TreeProvider<TState, TEvent>
 {
+    IReadOnlyList<Type> HandlesEvents { get; }
     
     /// <summary>
     /// Executes event sourcing tree with given state initializer
