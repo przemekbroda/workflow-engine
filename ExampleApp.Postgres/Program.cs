@@ -65,12 +65,17 @@ app.MapPost("/process", async (AppDbContext dbContext) =>
 app.MapGet("/process/{id:long}", async (AppDbContext dbContext, long id) =>
 {
     var result = await dbContext.ProcessRequests
+        .Include(x => x.ProcessRequestEvents)
         .FirstOrDefaultAsync(x => x.Id == id);
 
     return TypedResults.Ok(result);
 });
 
-app.MapPatch("/process/{id:long}", async (long id, AppDbContext dbContext, IEventSourceTree<TestState, FirstTreeEvent, FirstTreeProvider> eventSource) =>
+app.MapPatch("/process/{id:long}", async (
+    long id, 
+    AppDbContext dbContext, 
+    IEventSourceTree<TestState, FirstTreeEvent, FirstTreeProvider> eventSource, 
+    CancellationToken cancellationToken) =>
 {
     using (var transaction = dbContext.Database.BeginTransaction(IsolationLevel.ReadCommitted))
     {
@@ -91,13 +96,12 @@ app.MapPatch("/process/{id:long}", async (long id, AppDbContext dbContext, IEven
                 .OrderByDescending(e => e.Index)
                 .ToList();
 
-            var result = await eventSource.ExecuteTree(events, (e) =>
+            var result = await eventSource.ExecuteTree(events, @event =>
             {
-                if (e is not FirstTreeEvent.AwaitingExecution execution)
+                if (@event is not FirstTreeEvent.AwaitingExecution execution)
                 {
                     throw new Exception();
                 }
-
 
                 return new TestState
                 {
@@ -105,7 +109,7 @@ app.MapPatch("/process/{id:long}", async (long id, AppDbContext dbContext, IEven
                     AwaitingResult = false,
                     ProcessRequestId = process.Id,
                 };
-            }, CancellationToken.None);
+            }, cancellationToken);
 
             Console.WriteLine($"Finished with event {result}");
         }
@@ -115,6 +119,7 @@ app.MapPatch("/process/{id:long}", async (long id, AppDbContext dbContext, IEven
         }
         finally
         {
+            //we want to save anything that could be stored that was generated in nodes, in the db even when we've got an exception
             await transaction.CommitAsync();
         }
     }
