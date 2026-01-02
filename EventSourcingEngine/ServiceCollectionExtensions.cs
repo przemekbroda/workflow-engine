@@ -9,7 +9,7 @@ public static class ServiceCollectionExtensions
         where TEvent : class
         where TTreeProvider : TreeProvider<TState, TEvent>
     {
-        serviceCollection.AddSingleton<TreeProvider<TState, TEvent>, TTreeProvider>();
+        serviceCollection.AddSingleton<TTreeProvider>();
         
         var descriptor = new ServiceDescriptor(typeof(IEventSourceTree<TState, TEvent, TTreeProvider>), typeof(EventSourceTree<TState, TEvent, TTreeProvider>), eventSourceTreeLifetime);
         serviceCollection.Add(descriptor);

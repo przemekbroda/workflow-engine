@@ -13,16 +13,18 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
     private readonly EventNode<TState, TEvent> _eventNode;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<EventSourceTree<TState, TEvent, TTreeProvider>> _logger;
+    private readonly TreeProvider<TState, TEvent> _treeProvider;
     
     private EventNodeInst<TState, TEvent> _eventNodeInst = null!;
     private Cursor<TState, TEvent> _cursor = null!;
 
     public EventSourceTree(
         IServiceProvider serviceProvider, 
-        TreeProvider<TState, TEvent> treeProvider,
+        TTreeProvider treeProvider,
         ILogger<EventSourceTree<TState, TEvent, TTreeProvider>> logger)
     {
         _serviceProvider = serviceProvider;
+        _treeProvider = treeProvider;
         _logger = logger;
         _eventNode = treeProvider.ProvideTree();
         ResolveTree();
@@ -38,8 +40,10 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
     ///     It is being executed only once just after the ExecuteTree method call. If the first event's payload is null,
     ///     then a passed object to the function will also be null
     /// </param>
-    public async Task<ExecuteTreeResult<TState, TEvent>> ExecuteTree(IEnumerable<TEvent> initialCursorEvents, Func<TEvent, TState> stateInitializer, CancellationToken cancellationToken)
+    public async Task<ExecuteTreeResult<TState, TEvent>> ExecuteTree(IList<TEvent> initialCursorEvents, Func<TEvent, TState> stateInitializer, CancellationToken cancellationToken)
     {
+        ValidateInitialCursorEvents(initialCursorEvents);
+
         _cursor = SetupCursor(initialCursorEvents, stateInitializer);
         
         //if the tree only contains one init event - initial event, don't pop it from the stack
@@ -54,7 +58,23 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
 
         return finishedWithEvent;
     }
-    
+
+    private void ValidateInitialCursorEvents(IList<TEvent> initialCursorEvents)
+    {
+        if (initialCursorEvents.Count == 0)
+        {
+            throw new EventSourcingEngineException("Cannot execute event sourcing tree with empty initial cursor events");
+        }
+
+        foreach (var initialCursorEventType in initialCursorEvents.Select(e => e.GetType()))
+        {
+            if (!_treeProvider.HandledEvents.Contains(initialCursorEventType))
+            {
+                throw new EventSourcingEngineException($"No node can handle event of type {initialCursorEventType.Name}");
+            }
+        }
+    }
+
     /// <summary>
     /// 
     /// </summary>
