@@ -21,5 +21,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 v => JsonSerializer.Serialize(v, JsonSerializerOptions),
                 v => JsonSerializer.Deserialize<ProcessRequestEventPayload>(v, JsonSerializerOptions), 
                 ValueComparer.CreateDefault<ProcessRequestEventPayload>(true));
+
+        modelBuilder.Entity<ProcessRequest>()
+            .HasIndex(e => e.LastModifiedAt);
     }
 }

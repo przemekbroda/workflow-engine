@@ -30,7 +30,7 @@ public class ProcessRequestEvent
         };
     }
 
-    public static ProcessRequestEvent FromTreeEvent(FirstTreeEvent e, long ProcessRequestId, DateTime createdAt)
+    public static ProcessRequestEvent FromTreeEvent(FirstTreeEvent e, long processRequestId, DateTime createdAt)
     {
         return new ProcessRequestEvent
         {
@@ -43,7 +43,7 @@ public class ProcessRequestEvent
             },
             CreatedAt = createdAt,
             Index = e.Index,
-            ProcessRequestId = ProcessRequestId
+            ProcessRequestId = processRequestId
         };
     }
 }
