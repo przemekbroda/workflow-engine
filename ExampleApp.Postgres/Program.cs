@@ -84,7 +84,7 @@ app.MapPatch("/process/{id:long}", async (
             var process = await dbContext.ProcessRequests
                 .FromSql($"""SELECT * FROM "ProcessRequests" FOR UPDATE SKIP LOCKED""")
 //                 .FromSql($"""
-//                           SELECT * FROM "ProcessRequests" WHERE "LastModifiedAt" <= {DateTime.UtcNow.AddSeconds(-30)} ORDER BY "LastModifiedAt" DESC 
+//                           SELECT * FROM "ProcessRequests" WHERE "LastModifiedAt" <= {DateTime.UtcNow.AddSeconds(-30)} ORDER BY "LastModifiedAt" 
 //                           LIMIT 1 
 //                           FOR UPDATE SKIP LOCKED
 //                           """)
