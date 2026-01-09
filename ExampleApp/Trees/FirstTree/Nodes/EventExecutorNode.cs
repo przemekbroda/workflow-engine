@@ -4,22 +4,21 @@ namespace ExampleApp.Trees.FirstTree.Nodes;
 
 public class EventExecutorNode : BaseNodeExecutor<TestState, FirstTreeEvent>
 {
-    public override async Task<FirstTreeEvent> ExecuteAsync(FirstTreeEvent @event, CancellationToken cancellationToken)
+    public override async Task<FirstTreeEvent> ExecuteAsync(FirstTreeEvent @event, TestState state, CancellationToken cancellationToken)
     {
         return new FirstTreeEvent.ResultFetched(500);
     }
 
-    protected override void UpdateState(FirstTreeEvent e)
+    protected override TestState UpdateState(FirstTreeEvent e, TestState state)
     {
-        switch (e)
+        return e switch
         {
-            case FirstTreeEvent.AwaitingResult:
-                Cursor.State.AwaitingResult = true;
-                break;
-            case FirstTreeEvent.ResultFetched resultFetched:
-                Cursor.State.AwaitingResult = false;
-                Cursor.State.Balance += resultFetched.Amount;
-                break;
-        }
+            FirstTreeEvent.AwaitingResult => state with { AwaitingResult = true },
+            FirstTreeEvent.ResultFetched resultFetched => state with
+            {
+                AwaitingResult = false, Balance = state.Balance + resultFetched.Amount
+            },
+            _ => state
+        };
     }
 }

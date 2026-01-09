@@ -29,10 +29,13 @@ app.MapGet("/execute-tree",  async ([FromServices] IEventSourceTree<TestState, F
     {
         List<FirstTreeEvent> events =
         [
+            // new FirstTreeEvent.ResultSaveError(),
             new FirstTreeEvent.AwaitingExecution(300),
-            new FirstTreeEvent.AwaitingResult(1),
-            new FirstTreeEvent.AwaitingResult(2),
-            new FirstTreeEvent.AwaitingResult(3),
+            new FirstTreeEvent.ResultFetched(600),
+            // new FirstTreeEvent.ResultSaveError(),
+            // new FirstTreeEvent.AwaitingResult(1),
+            // new FirstTreeEvent.AwaitingResult(2),
+            // new FirstTreeEvent.AwaitingResult(3),
             // new FirstTreeEvent.ResultFetched(600),
         ];
         // List<Event> events =
@@ -77,11 +80,11 @@ app.MapGet("/execute-tree",  async ([FromServices] IEventSourceTree<TestState, F
 
         var stateInitializer = (FirstTreeEvent e) =>
         {
-            if (e is not FirstTreeEvent.AwaitingExecution execution) throw new Exception();
+            // if (e is not FirstTreeEvent.AwaitingExecution execution) throw new Exception();
             
             return new TestState
             {
-                Balance = execution.Balance
+                Balance = 500
             };
         };
         

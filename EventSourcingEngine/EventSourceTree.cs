@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace EventSourcingEngine;
 
 internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree<TState, TEvent, TTreeProvider>
-    where TState : class
+    where TState : struct
     where TEvent : class
     where TTreeProvider : TreeProvider<TState, TEvent>
 {
@@ -97,6 +97,11 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
             InitEvents = new Stack<TEvent>(existingEvents)
         };
 
+        if (!_eventNodeInst.Executor.HandlesEvents.Contains(treeCursor.CurrentEvent.GetType()))
+        {
+            throw new EventSourceEngineResumeException($"First node is not accepting initial event of this type {treeCursor.CurrentEvent.GetType().Name}");
+        }
+
         treeCursor.State = stateInitializer(treeCursor.CurrentEvent);
 
         return treeCursor;
@@ -108,7 +113,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
         
         if (ShouldHandleStateUpdate(eventNodeInst))
         {
-            eventNodeInst.Executor.TryUpdateState(_cursor.CurrentEvent);
+            _cursor.State = eventNodeInst.Executor.TryUpdateState(_cursor.CurrentEvent, _cursor.State);
         }
         
         if (_cursor.InitEvents.Count == 1 && eventNodeInst.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.GetType()))
@@ -118,6 +123,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
         
         List<EventNodeInst<TState, TEvent>> nextExecutors = [..eventNodeInst.NextExecutors, eventNodeInst];
 
+        // TODO maybe single is not required here and should be FirstOrDefault as it is guaranteed by tree validation for node to handle the same event as other sibling nodes
         var nextExecutor = nextExecutors.SingleOrDefault(ne => ne.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.GetType()));
 
         if (nextExecutor is null)
@@ -141,6 +147,13 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
     /// <exception cref="OperationCanceledException">The token has had cancellation requested.</exception>
     private async Task<ExecuteTreeResult<TState, TEvent>> Resume(CancellationToken cancellationToken)
     {
+        if (_cursor.ProcessedEvents.Count > 0)
+        {
+            if (!_eventNodeInst.Executor.HandlesEvents.Contains(_cursor.ProcessedEvents.Peek().GetType()) || 
+                !_eventNodeInst.Executor.ProducesEvents.Contains(_cursor.CurrentEvent.GetType()))
+                throw new EventSourceEngineResumeException("Cannot resume event sourcing tree");
+        }
+        
         var eventNodeInst = ResumeTree(_eventNodeInst);
 
         if (eventNodeInst is null)
@@ -165,13 +178,13 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
         
         if (eventNode.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.GetType()))
         {
-            var generatedEvent = await eventNode.Executor.ExecuteAsync(_cursor.CurrentEvent, cancellationToken);
+            var generatedEvent = await eventNode.Executor.ExecuteAsync(_cursor.CurrentEvent, _cursor.State, cancellationToken);
 
             UpdateCursorWithNewEvent(generatedEvent);
 
-            eventNode.Executor.TryUpdateState(generatedEvent);
+            _cursor.State = eventNode.Executor.TryUpdateState(generatedEvent, _cursor.State);
             
-            await eventNode.Executor.AfterExecutionAndStateUpdate(generatedEvent, cancellationToken);
+            await eventNode.Executor.AfterExecutionAndStateUpdate(generatedEvent, _cursor.State, cancellationToken);
         }
         
         foreach (var nextExecutor in eventNode.NextExecutors)

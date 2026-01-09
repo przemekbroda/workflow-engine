@@ -2,7 +2,7 @@ using ExampleApp.Postgres.Models;
 
 namespace ExampleApp.Postgres.Trees.FirstTree;
 
-public record TestState
+public record struct TestState
 {
     public int Balance { get; set; }
     public bool AwaitingResult { get; set; }
