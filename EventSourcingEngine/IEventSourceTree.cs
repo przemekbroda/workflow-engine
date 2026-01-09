@@ -1,7 +1,7 @@
 namespace EventSourcingEngine;
 
 public interface IEventSourceTree<TState, TEvent, TTreeProvider>
-    where TState : struct
+    where TState : class
     where TEvent : class
     where TTreeProvider : TreeProvider<TState, TEvent>
 {

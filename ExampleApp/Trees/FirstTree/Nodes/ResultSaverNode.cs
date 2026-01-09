@@ -5,12 +5,12 @@ namespace ExampleApp.Trees.FirstTree.Nodes;
 
 public class ResultSaverNode : BaseNodeExecutor<TestState, FirstTreeEvent>
 {
-    public override async Task<FirstTreeEvent> ExecuteAsync(FirstTreeEvent @event, TestState state, CancellationToken cancellationToken)
+    public override async Task<FirstTreeEvent> ExecuteAsync(FirstTreeEvent @event, CancellationToken cancellationToken)
     {
         switch (@event)
         {
             case FirstTreeEvent.ResultFetched:
-                Console.WriteLine($"Amount: {state.Balance}");
+                Console.WriteLine($"Amount: {Cursor.State.Balance}");
                 return new FirstTreeEvent.ResultSaveError();
             case FirstTreeEvent.ResultSaveError:
                 return new FirstTreeEvent.ResultSaved();
@@ -19,13 +19,13 @@ public class ResultSaverNode : BaseNodeExecutor<TestState, FirstTreeEvent>
         }
     }
 
-    protected override TestState UpdateState(FirstTreeEvent e, TestState state)
+    protected override TestState UpdateState(FirstTreeEvent e)
     {
         if (e is FirstTreeEvent.ResultSaveError)
         {
             
         }
         
-        return state;
+        return Cursor.State with {};
     }
 }

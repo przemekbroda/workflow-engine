@@ -6,7 +6,7 @@ namespace ExampleApp.Postgres.Trees.FirstTree.Nodes;
 
 public class ResultSaverNode(AppDbContext dbContext) : BaseNodeExecutor<TestState, FirstTreeEvent>
 {
-    public override async Task<FirstTreeEvent> ExecuteAsync(FirstTreeEvent @event, TestState state, CancellationToken _)
+    public override async Task<FirstTreeEvent> ExecuteAsync(FirstTreeEvent @event, CancellationToken _)
     {
         if (@event is FirstTreeEvent.ResultFetched)
         {
@@ -21,23 +21,23 @@ public class ResultSaverNode(AppDbContext dbContext) : BaseNodeExecutor<TestStat
         throw new Exception($"unhandled event: {@event.GetType().Name}");
     }
 
-    protected override TestState UpdateState(FirstTreeEvent e, TestState state)
+    protected override TestState UpdateState(FirstTreeEvent e)
     {
         if (e is FirstTreeEvent.ResultSaveError)
         {
             
         }
 
-        return state;
+        return Cursor.State;
     }
 
     // we are not passing the cancellation token to those calls because if we finished some processing, we should save results to DB
     // so we don't do the same actions again in later time
-    public override async Task AfterExecutionAndStateUpdate(FirstTreeEvent @event, TestState state, CancellationToken _)
+    public override async Task AfterExecutionAndStateUpdate(FirstTreeEvent @event, CancellationToken _)
     {
-        var dbEvent = ProcessRequestEvent.FromTreeEvent(@event, state.ProcessRequestId, DateTime.UtcNow);
+        var dbEvent = ProcessRequestEvent.FromTreeEvent(@event, Cursor.State.ProcessRequestId, DateTime.UtcNow);
         dbContext.ProcessRequestEvents.Add(dbEvent);
-        await dbContext.ProcessRequests.Where(r => r.Id == state.ProcessRequestId)
+        await dbContext.ProcessRequests.Where(r => r.Id == Cursor.State.ProcessRequestId)
             .ExecuteUpdateAsync(setter => setter.SetProperty(r => r.LastModifiedAt, DateTime.UtcNow), CancellationToken.None);
         await dbContext.SaveChangesAsync(CancellationToken.None);
     }

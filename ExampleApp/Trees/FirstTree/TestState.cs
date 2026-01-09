@@ -1,7 +1,7 @@
 namespace ExampleApp.Trees.FirstTree;
 
-public record struct TestState
+public record TestState
 {
-    public int Balance { get; set; }
-    public bool AwaitingResult { get; set; }
+    public int Balance { get; init; }
+    public bool AwaitingResult { get; init; }
 }

@@ -1,10 +1,8 @@
-using ExampleApp.Postgres.Models;
-
 namespace ExampleApp.Postgres.Trees.FirstTree;
 
-public record struct TestState
+public record TestState
 {
-    public int Balance { get; set; }
-    public bool AwaitingResult { get; set; }
-    public long ProcessRequestId { get; set; }
+    public int Balance { get; init; }
+    public bool AwaitingResult { get; init; }
+    public long ProcessRequestId { get; init; }
 }

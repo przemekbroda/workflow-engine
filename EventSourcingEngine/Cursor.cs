@@ -1,10 +1,10 @@
 namespace EventSourcingEngine;
 
 public class Cursor<TState, TEvent> 
-    where TState : struct
+    where TState : class
     where TEvent : class
 {
-    internal TState State { get; set; }
+    public TState State { get; internal set; } = null!;
     public TEvent CurrentEvent => InitEvents.Peek();
     public Stack<TEvent> InitEvents { get; internal init; } = new();
     public Stack<TEvent> ProcessedEvents { get; } = new();

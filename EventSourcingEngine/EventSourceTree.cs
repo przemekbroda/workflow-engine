@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace EventSourcingEngine;
 
 internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree<TState, TEvent, TTreeProvider>
-    where TState : struct
+    where TState : class
     where TEvent : class
     where TTreeProvider : TreeProvider<TState, TEvent>
 {
@@ -113,7 +113,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
         
         if (ShouldHandleStateUpdate(eventNodeInst))
         {
-            _cursor.State = eventNodeInst.Executor.TryUpdateState(_cursor.CurrentEvent, _cursor.State);
+            eventNodeInst.Executor.TryUpdateState(_cursor.CurrentEvent);
         }
         
         if (_cursor.InitEvents.Count == 1 && eventNodeInst.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.GetType()))
@@ -178,13 +178,13 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
         
         if (eventNode.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.GetType()))
         {
-            var generatedEvent = await eventNode.Executor.ExecuteAsync(_cursor.CurrentEvent, _cursor.State, cancellationToken);
-
-            UpdateCursorWithNewEvent(generatedEvent);
-
-            _cursor.State = eventNode.Executor.TryUpdateState(generatedEvent, _cursor.State);
+            var generatedEvent = await eventNode.Executor.ExecuteAsync(_cursor.CurrentEvent, cancellationToken);
             
-            await eventNode.Executor.AfterExecutionAndStateUpdate(generatedEvent, _cursor.State, cancellationToken);
+            UpdateCursorWithNewEvent(generatedEvent);
+            
+            _cursor.State = eventNode.Executor.TryUpdateState(generatedEvent);
+            
+            await eventNode.Executor.AfterExecutionAndStateUpdate(generatedEvent, cancellationToken);
         }
         
         foreach (var nextExecutor in eventNode.NextExecutors)
