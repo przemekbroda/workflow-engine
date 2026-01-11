@@ -31,11 +31,10 @@ app.MapGet("/execute-tree",  async ([FromServices] IEventSourceTree<TestState, F
         [
             // new FirstTreeEvent.ResultSaveError(),
             new FirstTreeEvent.AwaitingExecution(300),
-            new FirstTreeEvent.ResultFetched(600),
             // new FirstTreeEvent.ResultSaveError(),
-            // new FirstTreeEvent.AwaitingResult(1),
-            // new FirstTreeEvent.AwaitingResult(2),
-            // new FirstTreeEvent.AwaitingResult(3),
+            new FirstTreeEvent.AwaitingResult(1),
+            new FirstTreeEvent.AwaitingResult(2),
+            new FirstTreeEvent.AwaitingResult(3),
             // new FirstTreeEvent.ResultFetched(600),
         ];
         // List<Event> events =
