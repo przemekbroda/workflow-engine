@@ -2,9 +2,9 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleApp", "ExampleApp\ExampleApp.csproj", "{1DEC516F-424E-4C10-B1D9-DD2333194B84}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventSourcingEngine", "EventSourcingEngine\EventSourcingEngine.csproj", "{EFBD594A-862A-42F5-8C5D-CDE0C860FEAB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkflowEngine", "WorkflowEngine\WorkflowEngine.csproj", "{EFBD594A-862A-42F5-8C5D-CDE0C860FEAB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventSourcingEngine.UnitTests", "EventSourcingEngine.UnitTests\EventSourcingEngine.UnitTests.csproj", "{03C768F9-5D12-4AF6-A46F-6C1BCE430784}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkflowEngine.UnitTests", "WorkflowEngine.UnitTests\WorkflowEngine.UnitTests.csproj", "{03C768F9-5D12-4AF6-A46F-6C1BCE430784}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleApp.Postgres", "ExampleApp.Postgres\ExampleApp.Postgres.csproj", "{AA0E2002-5D72-43D2-8D04-0C0531F69477}"
 EndProject
