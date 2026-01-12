@@ -6,32 +6,33 @@ using ExampleApp.Postgres.Models;
 using ExampleApp.Postgres.Trees.FirstTree;
 using ExampleApp.Postgres.Trees.FirstTree.Nodes;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 builder.Services.RegisterTree<TestState, FirstTreeEvent, FirstTreeProvider>();
 builder.Services.AddScoped<EventExecutorNode>();
 builder.Services.AddScoped<ResultSaverNode>();
+
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 });
 
-var dataSourceBuilder = new NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("Postgres"));
-dataSourceBuilder.EnableDynamicJson();
-var dataSource = dataSourceBuilder.Build();
-
-builder.Services.AddDbContext<AppDbContext>(options =>
+builder.Services.AddDbContext<AppDbContext>(b =>
 {
-    options.UseNpgsql(dataSource);
+    b.UseNpgsql(builder.Configuration.GetConnectionString("Postgres"));
 });
 
 var app = builder.Build();
 
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseHttpsRedirection();
 
