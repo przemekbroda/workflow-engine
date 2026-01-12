@@ -24,8 +24,5 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.Entity<ProcessRequest>()
             .HasIndex(e => e.LastModifiedAt);
-        
-        
-        
     }
 }
