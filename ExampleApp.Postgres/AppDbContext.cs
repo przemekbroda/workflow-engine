@@ -26,5 +26,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasIndex(e => e.LastModifiedAt);
         
         
+        
     }
 }
