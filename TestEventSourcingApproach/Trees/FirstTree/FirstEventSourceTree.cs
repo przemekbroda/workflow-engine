@@ -1,4 +1,3 @@
-using System;
 using EventSourcingEngine;
 using TestEventSourcingApproach.Trees.FirstTree.Nodes;
 

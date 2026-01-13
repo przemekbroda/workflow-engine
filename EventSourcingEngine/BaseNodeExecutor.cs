@@ -1,6 +1,4 @@
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+using EventSourcingEngine.Exceptions;
 
 namespace EventSourcingEngine;
 
@@ -14,9 +12,11 @@ public abstract class BaseNodeExecutor<TState> : INodeExecutor<TState> where TSt
 
     public async Task TryUpdateState(Event e, CancellationToken cancellationToken)
     {
-        if (ProducesEvents.Contains(e.EventName))
+        if (!ProducesEvents.Contains(e.EventName))
         {
-            await UpdateState(e, cancellationToken);
+            throw new EventSourcingEngineException("Cannot handle state update");
         }
+
+        await UpdateState(e, cancellationToken);
     }
 }
