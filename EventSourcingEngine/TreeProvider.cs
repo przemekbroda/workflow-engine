@@ -6,6 +6,8 @@ public abstract class TreeProvider<TState, TEvent>
     where TState : class
     where TEvent : class
 {
+    internal HashSet<Type> HandledEvents { get; } = [];
+    
     protected TreeProvider()
     {
         ValidateTree();
@@ -44,6 +46,8 @@ public abstract class TreeProvider<TState, TEvent>
 
         CheckForDuplicatedHandledEventsInNextExecutor(eventNode);
         CheckNextExecutorsHandleProducedEvents(eventNode);
+        
+        HandledEvents.UnionWith(eventNode.HandlesEvents);
         
         foreach (var nextExecutor in eventNode.NextExecutors)
         {
