@@ -36,7 +36,7 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
     ///     It is being executed only once just after the ExecuteTree method call. If the first event's payload is null,
     ///     then a passed object to the function will also be null
     /// </param>
-    public async Task ExecuteTree(IEnumerable<TEvent> initialCursorEvents, Func<object?, TState> stateInitializer, CancellationToken cancellationToken)
+    public async Task<Event> ExecuteTree(IEnumerable<TEvent> initialCursorEvents, Func<object?, TState> stateInitializer, CancellationToken cancellationToken)
     {
         _cursor = SetupCursor(initialCursorEvents, stateInitializer);
         
@@ -46,9 +46,11 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
             PopProcessedEvent();
         }
 
-        await Resume(cancellationToken);
+        var finishedWithEvent = await Resume(cancellationToken);
         
         _logger.LogDebug("Finished executing event sourcing tree");
+
+        return finishedWithEvent;
     }
     
     /// <summary>
@@ -102,6 +104,11 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
             {
                 return ResumeTree(eventNodeInst);
             }
+
+            if (ShouldHandleStateUpdate(eventNodeInst))
+            {
+                return eventNodeInst;
+            }
             
             return TryResumeInNextExecutors(eventNodeInst);
         }
@@ -127,9 +134,9 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
     /// 
     /// </summary>
     /// <param name="cancellationToken"></param>
-    /// <exception cref="EventSourceEngineResumeException">Thrown when could not find a node that can handle latest event</exception>
+    /// <exception cref="EventSourceEngineResumeException">Thrown when could not find a node that can handle the latest event</exception>
     /// <exception cref="OperationCanceledException">The token has had cancellation requested.</exception>
-    private async Task Resume(CancellationToken cancellationToken)
+    private async Task<TEvent> Resume(CancellationToken cancellationToken)
     {
         var eventNodeInst = ResumeTree(_eventNodeInst);
 
@@ -138,7 +145,7 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
             throw new EventSourceEngineResumeException("Cannot resume event sourcing tree");
         }
         
-        await TryExecuteNode(eventNodeInst, cancellationToken);
+        return await TryExecuteNode(eventNodeInst, cancellationToken);
     }
 
     /// <summary>
@@ -147,7 +154,7 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
     /// <param name="eventNode"></param>
     /// <param name="cancellationToken"></param>
     /// <exception cref="OperationCanceledException">The token has had cancellation requested.</exception>
-    private async Task TryExecuteNode(EventNodeInst<TState, TEvent> eventNode, CancellationToken cancellationToken)
+    private async Task<TEvent> TryExecuteNode(EventNodeInst<TState, TEvent> eventNode, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         
@@ -168,10 +175,11 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
             
             if (nextExecutor.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.EventName))
             {
-                await TryExecuteNode(nextExecutor, cancellationToken);
-                break;
+                return await TryExecuteNode(nextExecutor, cancellationToken);
             }
         }
+        
+        return _cursor.CurrentEvent;
     }
 
     private EventNodeInst<TState, TEvent> InstantiateNode(EventNode<TState, TEvent> eventNode)
