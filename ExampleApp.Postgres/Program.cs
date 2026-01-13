@@ -89,7 +89,8 @@ app.MapPatch("/process/{id:long}", async (
 //                           FOR UPDATE SKIP LOCKED
 //                           """)
                 .Include(x => x.ProcessRequestEvents)
-                .FirstOrDefaultAsync();
+                // .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(x => x.Id == id);
 
             if (process is null)
             {
