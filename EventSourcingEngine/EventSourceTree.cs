@@ -37,7 +37,7 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
         
         InitializeState(stateInitializer);
 
-        await ResumeAndExecuteEventNode(cancellationToken);
+        await Resume(cancellationToken);
         
         Console.WriteLine("finished processing");
     }
@@ -126,7 +126,7 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
         return null;
     }
 
-    private async Task ResumeAndExecuteEventNode(CancellationToken cancellationToken)
+    private async Task Resume(CancellationToken cancellationToken)
     {
         var eventNodeInst = ResumeTree(_eventNodeInst);
 
