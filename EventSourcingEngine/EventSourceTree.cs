@@ -245,18 +245,18 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
         return eventNodeInst;
     }
 
-    private bool ShouldHandleStateUpdate(EventNodeInst<TState, TEvent> eventNodeInst, Cursor<TState, TEvent> cursor)
+    private static bool ShouldHandleStateUpdate(EventNodeInst<TState, TEvent> eventNodeInst, Cursor<TState, TEvent> cursor)
     {
         return eventNodeInst.Executor.ProducesEvents.Contains(cursor.CurrentEvent.GetType());
     }
     
-    private void UpdateCursorWithNewEvent(TEvent generatedEvent, Cursor<TState, TEvent> cursor)
+    private static void UpdateCursorWithNewEvent(TEvent generatedEvent, Cursor<TState, TEvent> cursor)
     {
         PopProcessedEvent(cursor);
         cursor.InitEvents.Push(generatedEvent);
     }
 
-    private void PopProcessedEvent(Cursor<TState, TEvent> cursor)
+    private static void PopProcessedEvent(Cursor<TState, TEvent> cursor)
     {
         var oldEvent = cursor.InitEvents.Pop();
         cursor.ProcessedEvents.Push(oldEvent);
