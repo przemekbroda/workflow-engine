@@ -8,6 +8,7 @@ public class EventExecutorNode(AppDbContext dbContext) : BaseNodeExecutor<TestSt
 {
     public override async Task<FirstTreeEvent> ExecuteAsync(FirstTreeEvent @event, CancellationToken cancellationToken)
     {
+        //simulates some long task that can be canceled
         await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
         
         return new FirstTreeEvent.ResultFetched(500, @event.Index + 1);
@@ -27,8 +28,8 @@ public class EventExecutorNode(AppDbContext dbContext) : BaseNodeExecutor<TestSt
         }
     }
 
-    // we are not passing the cancellation token to those calls because if we finished some processing, we should save results to DB
-    // so we don't do the same actions again in later time
+    // we are not passing the cancellation token to those calls because if we finished some processing, we should save results to DB and just be done with this,
+    // and we don't do the same actions again in later time.
     public override async Task AfterExecutionAndStateUpdate(FirstTreeEvent @event, CancellationToken _)
     {
         var dbEvent = ProcessRequestEvent.FromTreeEvent(@event, Cursor.State.ProcessRequestId, DateTime.UtcNow);
