@@ -30,7 +30,6 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
     ///     It is being executed only once just after the ExecuteTree method call. If the first event's payload is null,
     ///     then a passed object to the function will also be null
     /// </param>
-    /// <exception cref="Exception"></exception>
     public async Task ExecuteTree(List<TEvent> initialCursorEvents, Func<object?, TState> stateInitializer, CancellationToken cancellationToken)
     {
         SetupCursor(initialCursorEvents);
@@ -42,6 +41,10 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
         Console.WriteLine("finished processing");
     }
     
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <exception cref="EventSourcingEngineException"></exception>
     private void ResolveTree()
     {
         if (_eventNode is null)
@@ -126,6 +129,12 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
         return null;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <exception cref="EventSourceEngineResumeException">Thrown when could not find a node that can handle latest event</exception>
+    /// <exception cref="OperationCanceledException">The token has had cancellation requested.</exception>
     private async Task Resume(CancellationToken cancellationToken)
     {
         var eventNodeInst = ResumeTree(_eventNodeInst);
@@ -138,6 +147,12 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
         await TryExecuteNode(eventNodeInst, cancellationToken);
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="eventNode"></param>
+    /// <param name="cancellationToken"></param>
+    /// <exception cref="OperationCanceledException">The token has had cancellation requested.</exception>
     private async Task TryExecuteNode(EventNodeInst<TState, TEvent> eventNode, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
