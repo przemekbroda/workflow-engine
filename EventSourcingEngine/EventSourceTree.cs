@@ -8,7 +8,6 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
     where TState : class
     where TEvent : class
     where TTreeProvider : TreeProvider<TState, TEvent>
-
 {
     private readonly EventNode<TState, TEvent> _eventNode;
     private readonly IServiceProvider _serviceProvider;
@@ -30,6 +29,8 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
         ResolveTree();
     }
     
+    public IReadOnlyList<Type> HandlesEvents => _treeProvider.HandledEvents.ToList();
+
     /// <summary>
     /// 
     /// </summary>
@@ -68,7 +69,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
 
         foreach (var initialCursorEventType in initialCursorEvents.Select(e => e.GetType()))
         {
-            if (!_treeProvider.HandledEvents.Contains(initialCursorEventType))
+            if (!HandlesEvents.Contains(initialCursorEventType))
             {
                 throw new EventSourcingEngineException($"No node can handle event of type {initialCursorEventType.Name}");
             }
