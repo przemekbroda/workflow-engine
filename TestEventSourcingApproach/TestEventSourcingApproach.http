@@ -1,0 +1,6 @@
+@TestEventSourcingApproach_HostAddress = http://localhost:5189
+
+GET {{TestEventSourcingApproach_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
