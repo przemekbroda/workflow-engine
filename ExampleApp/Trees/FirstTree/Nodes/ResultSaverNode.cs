@@ -7,18 +7,16 @@ public class ResultSaverNode : BaseNodeExecutor<TestState, FirstTreeEvent>
 {
     public override async Task<FirstTreeEvent> ExecuteAsync(FirstTreeEvent @event, CancellationToken cancellationToken)
     {
-        if (@event is FirstTreeEvent.ResultFetched resultFetched)
+        switch (@event)
         {
-            Console.WriteLine($"Amount: {Cursor.State.Balance}");
-            return new FirstTreeEvent.ResultSaveError();
+            case FirstTreeEvent.ResultFetched:
+                Console.WriteLine($"Amount: {Cursor.State.Balance}");
+                return new FirstTreeEvent.ResultSaveError();
+            case FirstTreeEvent.ResultSaveError:
+                return new FirstTreeEvent.ResultSaved();
+            default:
+                throw new Exception($"unhandled event: {@event.GetType().Name}");
         }
-        
-        if (@event is FirstTreeEvent.ResultSaveError)
-        {
-            return new FirstTreeEvent.ResultSaved();
-        }
-
-        throw new Exception($"unhandled event: {@event.GetType().Name}");
     }
 
     protected override void UpdateState(FirstTreeEvent e)
