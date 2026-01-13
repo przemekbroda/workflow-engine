@@ -105,6 +105,7 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
             return null;
         }
         
+        //TODO do we need this if here or can we just leave PopProcessedEvent(); without if
         if (_cursor.InitEvents.Count > 1)
         {
             PopProcessedEvent();
