@@ -50,7 +50,7 @@ public abstract class EventSourceTree<TState, TEvent>
         _cursor = treeCursor;
     }
 
-    private void  InitializeState(Func<object?, TState> stateInitializer)
+    private void InitializeState(Func<object?, TState> stateInitializer)
     {
         _cursor.State = stateInitializer(_cursor.CurrentEvent.Payload);
 
@@ -78,12 +78,16 @@ public abstract class EventSourceTree<TState, TEvent>
             if (_cursor.InitEvents.Count > 1)
             {
                 PopProcessedEvent();
+            }
+            else
+            {
+                return eventNodeInst;
+            }
                 
-                // It might be possible that same node should handle next event
-                if (ShouldHandleStateUpdate(eventNodeInst))
-                {
-                    return await ResumeTree(eventNodeInst, cancellationToken);
-                }
+            // It might be possible that same node should handle next event
+            if (_cursor.InitEvents.Count > 0 && ShouldHandleStateUpdate(eventNodeInst))
+            {
+                return await ResumeTree(eventNodeInst, cancellationToken);
             }
             
             return await TryResumeInNextExecutors(eventNodeInst, cancellationToken);
@@ -119,17 +123,22 @@ public abstract class EventSourceTree<TState, TEvent>
     public async Task ExecuteTree(Func<object?, TState> stateInitializer, CancellationToken cancellationToken)
     {
         InitializeState(stateInitializer);
+
+        await ResumeAndExecuteEventNode(cancellationToken);
         
+        Console.WriteLine("finished processing");
+    }
+
+    private async Task ResumeAndExecuteEventNode(CancellationToken cancellationToken)
+    {
         var eventNodeInst = await ResumeTree(_eventNodeInst, cancellationToken);
 
         if (eventNodeInst is null)
         {
-            throw new Exception("Cannot resume event sourcing tree");
+            throw new EventSourceEngineResumeException("Cannot resume event sourcing tree");
         }
         
         await TryExecuteNode(eventNodeInst, cancellationToken);
-        
-        Console.WriteLine("finished processing");
     }
 
     private async Task TryExecuteNode(EventNodeInst<TState, TEvent> eventNode, CancellationToken cancellationToken)
