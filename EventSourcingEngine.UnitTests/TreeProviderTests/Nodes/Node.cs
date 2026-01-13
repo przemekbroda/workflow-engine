@@ -2,12 +2,12 @@
 
 public class TestBaseNode : BaseNodeExecutor<TreeState, TreeEvent>
 {
-    protected override TreeState UpdateState(TreeEvent e, TreeState state)
+    protected override TreeState UpdateState(TreeEvent e)
     {
         throw new NotImplementedException();
     }
 
-    public override Task<TreeEvent> ExecuteAsync(TreeEvent @event, TreeState treeState, CancellationToken cancellationToken)
+    public override Task<TreeEvent> ExecuteAsync(TreeEvent @event, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }

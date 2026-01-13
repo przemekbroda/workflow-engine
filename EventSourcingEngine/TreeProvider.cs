@@ -3,7 +3,7 @@ using EventSourcingEngine.Exceptions;
 namespace EventSourcingEngine;
 
 public abstract class TreeProvider<TState, TEvent> 
-    where TState : struct
+    where TState : class
     where TEvent : class
 {
     internal HashSet<Type> HandledEvents { get; } = [];
@@ -38,11 +38,6 @@ public abstract class TreeProvider<TState, TEvent>
         {
             throw new EventSourcingEngineTreeValidationException("Executor must implement INodeExecutor");
         }
-        
-        // if (_serviceProvider.GetService(eventNode.Executor) is null)
-        // {
-        //     throw new EventSourcingEngineTreeValidationException($"Executor {eventNode.Executor.Name} has not been provided to DI");
-        // }
 
         CheckForDuplicatedHandledEventsInNextExecutor(eventNode);
         CheckNextExecutorsHandleProducedEvents(eventNode);

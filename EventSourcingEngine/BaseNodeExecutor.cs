@@ -3,28 +3,28 @@ using EventSourcingEngine.Exceptions;
 namespace EventSourcingEngine;
 
 public abstract class BaseNodeExecutor<TState, TEvent> : INodeExecutor<TState, TEvent> 
-    where TState : struct
+    where TState : class
     where TEvent : class
 {
     public required Cursor<TState, TEvent> Cursor { get; set; }
     public required HashSet<Type> ProducesEvents { get; set; }
     public required HashSet<Type> HandlesEvents { get; set; }
 
-    protected abstract TState UpdateState(TEvent e, TState state);
+    protected abstract TState UpdateState(TEvent e);
     
-    public abstract Task<TEvent> ExecuteAsync(TEvent @event, TState state, CancellationToken cancellationToken);
+    public abstract Task<TEvent> ExecuteAsync(TEvent @event, CancellationToken cancellationToken);
 
-    public TState TryUpdateState(TEvent @event, TState state)
+    public TState TryUpdateState(TEvent @event)
     {
         if (!ProducesEvents.Contains(@event.GetType()))
         {
             throw new EventSourcingEngineException($"Cannot handle state update for provided event type {@event.GetType().Name}");
         }
 
-        return UpdateState(@event, state);
+        return UpdateState(@event);
     }
 
-    public virtual Task AfterExecutionAndStateUpdate(TEvent @event, TState state, CancellationToken cancellationToken)
+    public virtual Task AfterExecutionAndStateUpdate(TEvent @event, CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }

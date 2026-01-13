@@ -1,7 +1,7 @@
 namespace EventSourcingEngine;
 
 public record EventNode<TState, TEvent>
-    where TState : struct
+    where TState : class
     where TEvent : class
 {
     public required HashSet<Type> HandlesEvents { get; init; }
@@ -11,5 +11,5 @@ public record EventNode<TState, TEvent>
 }
 
 internal record EventNodeInst<TState, TEvent>(INodeExecutor<TState, TEvent> Executor, List<EventNodeInst<TState, TEvent>> NextExecutors) 
-    where TState : struct
+    where TState : class
     where TEvent : class;
