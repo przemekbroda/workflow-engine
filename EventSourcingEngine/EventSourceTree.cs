@@ -83,37 +83,32 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
     private EventNodeInst<TState, TEvent>? ResumeTree(EventNodeInst<TState, TEvent> eventNodeInst)
     {
         eventNodeInst.Executor.Cursor = _cursor;
-
+        
+        if (ShouldHandleStateUpdate(eventNodeInst))
+        {
+            eventNodeInst.Executor.TryUpdateState(_cursor.CurrentEvent);
+        }
+        
         if (_cursor.InitEvents.Count == 1 && eventNodeInst.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.EventName))
         {
             return eventNodeInst;
         }
+        
+        List<EventNodeInst<TState, TEvent>> nextExecutors = [..eventNodeInst.NextExecutors, eventNodeInst];
 
-        if (ShouldHandleStateUpdate(eventNodeInst))
+        var nextExecutor = nextExecutors.SingleOrDefault(ne => ne.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.EventName));
+
+        if (nextExecutor is null)
         {
-            _logger.LogDebug("Updating state in the {Executor}", eventNodeInst.Executor.GetType().Name);
-            eventNodeInst.Executor.TryUpdateState(_cursor.CurrentEvent);
-
-            if (_cursor.InitEvents.Count > 1)
-            {
-                PopProcessedEvent();
-            }
-                
-            // It might be possible that same node should handle next event
-            if (_cursor.InitEvents.Count > 1 && ShouldHandleStateUpdate(eventNodeInst))
-            {
-                return ResumeTree(eventNodeInst);
-            }
-
-            if (ShouldHandleStateUpdate(eventNodeInst))
-            {
-                return eventNodeInst;
-            }
-            
-            return TryResumeInNextExecutors(eventNodeInst);
+            return null;
         }
         
-        return null;
+        if (_cursor.InitEvents.Count > 1)
+        {
+            PopProcessedEvent();
+        }
+
+        return ResumeTree(nextExecutor);
     }
 
     private EventNodeInst<TState, TEvent>? TryResumeInNextExecutors(EventNodeInst<TState, TEvent> eventNodeInst)
@@ -201,11 +196,7 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
 
     private bool ShouldHandleStateUpdate(EventNodeInst<TState, TEvent> eventNodeInst)
     {
-        var previousEvent = _cursor.ProcessedEvents.Peek();
-        var handlesLastProcessedEvent = eventNodeInst.Executor.HandlesEvents.Contains(previousEvent.EventName);
-        var producesEvent = eventNodeInst.Executor.ProducesEvents.Contains(_cursor.CurrentEvent.EventName);
-        
-        return producesEvent && handlesLastProcessedEvent;
+        return eventNodeInst.Executor.ProducesEvents.Contains(_cursor.CurrentEvent.EventName);
     }
     
     private void UpdateCursorWithNewEvent(TEvent generatedEvent)

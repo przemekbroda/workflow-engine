@@ -29,10 +29,9 @@ app.MapGet("/execute-tree",  async (IEventSourceTree<TestState, Event> firstEven
         List<Event> events =
         [
             new("AwaitingExecution", 300),
-            new("AwaitingResult", 600),
-            new("AwaitingResult", 600),
-            new("AwaitingResult", 600),
-            new("ResultFetched", 600),
+            new("ResultFetched", 1),
+            new("ResultSaveError", 2),
+            new("ResultSaveError", 3),
         ];
         
         // List<Event> events =
