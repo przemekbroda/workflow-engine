@@ -1,5 +1,6 @@
 using EventSourcingEngine.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace EventSourcingEngine;
 
@@ -9,13 +10,18 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
 {
     private readonly EventNode<TState, TEvent> _eventNode;
     private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger<EventSourceTree<TState, TEvent>> _logger;
     
     private EventNodeInst<TState, TEvent> _eventNodeInst = null!;
     private Cursor<TState, TEvent> _cursor = null!;
 
-    public EventSourceTree(IServiceProvider serviceProvider, TreeProvider<TState, TEvent> treeProvider)
+    public EventSourceTree(
+        IServiceProvider serviceProvider, 
+        TreeProvider<TState, TEvent> treeProvider,
+        ILogger<EventSourceTree<TState, TEvent>> logger)
     {
         _serviceProvider = serviceProvider;
+        _logger = logger;
         _eventNode = treeProvider.ProvideTree();
         ResolveTree();
     }
@@ -42,7 +48,7 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
 
         await Resume(cancellationToken);
         
-        Console.WriteLine("finished processing");
+        _logger.LogDebug("Finished executing event sourcing tree");
     }
     
     /// <summary>
@@ -83,7 +89,7 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
 
         if (ShouldHandleStateUpdate(eventNodeInst))
         {
-            Console.WriteLine($"Updating state in the {eventNodeInst.Executor.GetType().Name}");
+            _logger.LogDebug("Updating state in the {Executor}", eventNodeInst.Executor.GetType().Name);
             eventNodeInst.Executor.TryUpdateState(_cursor.CurrentEvent);
 
             if (_cursor.InitEvents.Count > 1)
@@ -168,18 +174,6 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
         }
     }
 
-    private void UpdateCursorWithNewEvent(TEvent generatedEvent)
-    {
-        PopProcessedEvent();
-        _cursor.InitEvents.Push(generatedEvent);
-    }
-
-    private void PopProcessedEvent()
-    {
-        var oldEvent = _cursor.InitEvents.Pop();
-        _cursor.ProcessedEvents.Push(oldEvent);
-    }
-
     private EventNodeInst<TState, TEvent> InstantiateNode(EventNode<TState, TEvent> eventNode)
     {
         if (_serviceProvider.GetRequiredService(eventNode.Executor) is not INodeExecutor<TState, TEvent> nodeExecutor)
@@ -204,5 +198,17 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
         var producesEvent = eventNodeInst.Executor.ProducesEvents.Contains(_cursor.CurrentEvent.EventName);
         
         return producesEvent && handlesLastProcessedEvent;
+    }
+    
+    private void UpdateCursorWithNewEvent(TEvent generatedEvent)
+    {
+        PopProcessedEvent();
+        _cursor.InitEvents.Push(generatedEvent);
+    }
+
+    private void PopProcessedEvent()
+    {
+        var oldEvent = _cursor.InitEvents.Pop();
+        _cursor.ProcessedEvents.Push(oldEvent);
     }
 }
