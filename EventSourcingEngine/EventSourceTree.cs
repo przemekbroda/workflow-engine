@@ -30,11 +30,15 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
     ///     It is being executed only once just after the ExecuteTree method call. If the first event's payload is null,
     ///     then a passed object to the function will also be null
     /// </param>
-    public async Task ExecuteTree(List<TEvent> initialCursorEvents, Func<object?, TState> stateInitializer, CancellationToken cancellationToken)
+    public async Task ExecuteTree(IEnumerable<TEvent> initialCursorEvents, Func<object?, TState> stateInitializer, CancellationToken cancellationToken)
     {
-        SetupCursor(initialCursorEvents);
+        _cursor = SetupCursor(initialCursorEvents, stateInitializer);
         
-        InitializeState(stateInitializer);
+        //if the tree only contains one init event - initial event, don't pop it from the stack
+        if (_cursor.InitEvents.Count > 1)
+        {
+            PopProcessedEvent();
+        }
 
         await Resume(cancellationToken);
         
@@ -55,33 +59,17 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
         _eventNodeInst = InstantiateNode(_eventNode);
     }
 
-    private void SetupCursor(IEnumerable<TEvent> existingEvents)
+    private Cursor<TState, TEvent> SetupCursor(IEnumerable<TEvent> existingEvents, Func<object?, TState> stateInitializer)
     {
-        var ordered = existingEvents
-            .ToList();
-
-        ordered.Reverse();
-
-        var stack = new Stack<TEvent>(ordered);
-
         var treeCursor = new Cursor<TState, TEvent>
         {
             State = new TState(),
-            InitEvents = stack
+            InitEvents = new Stack<TEvent>(existingEvents)
         };
 
-        _cursor = treeCursor;
-    }
+        treeCursor.State = stateInitializer(treeCursor.CurrentEvent.Payload);
 
-    private void InitializeState(Func<object?, TState> stateInitializer)
-    {
-        _cursor.State = stateInitializer(_cursor.CurrentEvent.Payload);
-
-        //if the tree only contains one init event - initial event, don't pop it from the stack
-        if (_cursor.InitEvents.Count > 1)
-        {
-            PopProcessedEvent();
-        }
+        return treeCursor;
     }
     
     private EventNodeInst<TState, TEvent>? ResumeTree(EventNodeInst<TState, TEvent> eventNodeInst)

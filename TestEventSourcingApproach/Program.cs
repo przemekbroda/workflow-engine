@@ -35,6 +35,8 @@ app.MapGet("/execute-tree",  async (IEventSourceTree<TestState, Event> firstEven
             new Event("ResultFetched", 600),
         ];
 
+        events.Reverse();
+
         var stateInitializer = (object? payload) => new TestState
         {
             Balance = (int)payload!
