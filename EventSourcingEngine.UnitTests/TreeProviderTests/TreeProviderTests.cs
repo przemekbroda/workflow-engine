@@ -63,7 +63,7 @@ public class TreeProviderTests
         var exception = Assert.Throws<EventSourcingEngineTreeValidationException>(() =>
             new NotValidProducedEventTreeProvider(serviceProviderMock.Object));
         
-        Assert.Equal($"Node with an executor {nameof(Node6)} handles event WeirdEvent that is not produced by parent node with an executor {nameof(Node4)}", exception.Message);
+        Assert.Equal($"Node with an executor {nameof(Node6)} handles event WeirdEvent that is not produced by parent node with an executor {nameof(Node4)} or by itself", exception.Message);
     }
 
     [Fact]

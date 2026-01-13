@@ -66,17 +66,17 @@ public abstract class TreeProvider<TState, TEvent>
         }
     }
 
-    private static void CheckNextExecutorsHandleProducedEvents(EventNode<TState, TEvent> eventNode)
+    private static void CheckNextExecutorsHandleProducedEvents(EventNode<TState, TEvent> parentNode)
     {
-        var producedEvents = eventNode.ProducesEvents;
+        var parentProducedEvents = parentNode.ProducesEvents;
         
-        foreach (var nextExecutor in eventNode.NextExecutors)
+        foreach (var childNode in parentNode.NextExecutors)
         {
-            foreach (var nextExecutorEventName in nextExecutor.HandlesEvents)
+            foreach (var childNodeHandledEvent in childNode.HandlesEvents)
             {
-                if (!producedEvents.Remove(nextExecutorEventName) && !nextExecutor.HandlesEvents.Contains(nextExecutorEventName))
+                if (!parentProducedEvents.Remove(childNodeHandledEvent) && !childNode.ProducesEvents.Contains(childNodeHandledEvent))
                 {
-                    throw new EventSourcingEngineTreeValidationException($"Node with an executor {nextExecutor.Executor.Name} handles event {nextExecutorEventName} that is not produced by parent node with an executor {eventNode.Executor.Name}");
+                    throw new EventSourcingEngineTreeValidationException($"Node with an executor {childNode.Executor.Name} handles event {childNodeHandledEvent} that is not produced by parent node with an executor {parentNode.Executor.Name} or by itself");
                 }
             }
         }
