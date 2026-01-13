@@ -11,7 +11,7 @@ public static class ServiceCollectionExtensions
     {
         serviceCollection.AddSingleton<TreeProvider<TState, TEvent>, TTreeProvider>();
         
-        var descriptor = new ServiceDescriptor(typeof(IEventSourceTree<TState, TEvent>), typeof(EventSourceTree<TState, TEvent>), eventSourceTreeLifetime);
+        var descriptor = new ServiceDescriptor(typeof(IEventSourceTree<TState, TEvent, TTreeProvider>), typeof(EventSourceTree<TState, TEvent, TTreeProvider>), eventSourceTreeLifetime);
         serviceCollection.Add(descriptor);
         
         return serviceCollection;

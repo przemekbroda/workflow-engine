@@ -1,8 +1,9 @@
 namespace EventSourcingEngine;
 
-public interface IEventSourceTree<TState, TEvent>
+public interface IEventSourceTree<TState, TEvent, TTreeProvider>
     where TState : new()
     where TEvent : Event
+    where TTreeProvider : TreeProvider<TState, TEvent>
 {
     
     /// <summary>
@@ -11,5 +12,5 @@ public interface IEventSourceTree<TState, TEvent>
     /// <param name="initialCursorEvents"></param>
     /// <param name="stateInitializer"></param>
     /// <param name="cancellationToken"></param>
-    public Task<Event> ExecuteTree(IEnumerable<TEvent> initialCursorEvents, Func<object?, TState> stateInitializer, CancellationToken cancellationToken);
+    public Task<ExecuteTreeResult<TState, TEvent>> ExecuteTree(IEnumerable<TEvent> initialCursorEvents, Func<object?, TState> stateInitializer, CancellationToken cancellationToken);
 }
