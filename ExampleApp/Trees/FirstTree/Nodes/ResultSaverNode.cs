@@ -3,27 +3,27 @@ using ExampleApp.Trees.FirstTree.Payloads;
 
 namespace ExampleApp.Trees.FirstTree.Nodes;
 
-public class ResultSaverNode : BaseNodeExecutor<TestState, Event>
+public class ResultSaverNode : BaseNodeExecutor<TestState, FirstTreeEvent>
 {
-    public override async Task<Event> ExecuteAsync(Event e, CancellationToken cancellationToken)
+    public override async Task<FirstTreeEvent> ExecuteAsync(FirstTreeEvent e, CancellationToken cancellationToken)
     {
-        if (e.EventName == "ResultFetched")
+        if (e is FirstTreeEvent.ResultFetched resultFetched)
         {
             Console.WriteLine($"Amount: {Cursor.State.Balance}");
-            return new Event("ResultSaveError", new ResultSaveErrorPayload());
+            return new FirstTreeEvent.ResultSaveError();
         }
-
-        if (e.EventName == "ResultSaveError")
+        
+        if (e is FirstTreeEvent.ResultSaveError)
         {
-            return new Event("ResultSaved", null);
+            return new FirstTreeEvent.ResultSaved();
         }
 
-        throw new Exception($"unhandled event: {e.EventName}");
+        throw new Exception($"unhandled event: {e.GetType().Name}");
     }
 
-    protected override void UpdateState(Event e)
+    protected override void UpdateState(FirstTreeEvent e)
     {
-        if (e.EventName == "ResultSaveError")
+        if (e is FirstTreeEvent.ResultSaveError)
         {
             
         }

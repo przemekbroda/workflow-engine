@@ -2,7 +2,7 @@ namespace EventSourcingEngine;
 
 public class Cursor<TState, TEvent> 
     where TState : new()
-    where TEvent : Event
+    where TEvent : class
 {
     public required TState State { get; set; }
     public TEvent CurrentEvent => InitEvents.Peek();

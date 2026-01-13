@@ -2,11 +2,11 @@ namespace EventSourcingEngine;
 
 public interface INodeExecutor<TState, TEvent> 
     where TState : new()
-    where TEvent : Event
+    where TEvent : class
 {
     public Cursor<TState, TEvent> Cursor { get; set; }
-    HashSet<string> HandlesEvents { get; set; }
-    HashSet<string> ProducesEvents { get; set; }
+    HashSet<Type> HandlesEvents { get; set; }
+    HashSet<Type> ProducesEvents { get; set; }
     Task<TEvent> ExecuteAsync(TEvent e, CancellationToken cancellationToken);
     void TryUpdateState(TEvent e);
 }

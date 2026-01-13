@@ -2,23 +2,24 @@ using EventSourcingEngine;
 
 namespace ExampleApp.Trees.FirstTree.Nodes;
 
-public class EventExecutorNode : BaseNodeExecutor<TestState, Event>
+public class EventExecutorNode : BaseNodeExecutor<TestState, FirstTreeEvent>
 {
-    public override async Task<Event> ExecuteAsync(Event e, CancellationToken cancellationToken)
+    public override async Task<FirstTreeEvent> ExecuteAsync(FirstTreeEvent e, CancellationToken cancellationToken)
     {
-        return new Event("ResultFetched", 500);
+        return new FirstTreeEvent.ResultFetched(500);
     }
 
-    protected override void UpdateState(Event e)
+    protected override void UpdateState(FirstTreeEvent e)
     {
-        if (e.EventName == "AwaitingResult")
+        switch (e)
         {
-            Cursor.State.AwaitingResult = true;
+            case FirstTreeEvent.AwaitingResult:
+                Cursor.State.AwaitingResult = true;
+                break;
+            case FirstTreeEvent.ResultFetched resultFetched:
+                Cursor.State.AwaitingResult = false;
+                Cursor.State.Balance += resultFetched.Amount;
+                break;
         }
-        else if (e.EventName == "ResultFetched")
-        {
-            Cursor.State.Balance += (int)e.Payload!;
-        }
-
     }
 }
