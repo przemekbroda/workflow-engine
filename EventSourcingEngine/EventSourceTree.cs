@@ -55,7 +55,7 @@ internal class EventSourceTree<TState, TEvent> : IEventSourceTree<TState, TEvent
         _eventNodeInst = InstantiateNode(_eventNode);
     }
 
-    private void SetupCursor(List<TEvent> existingEvents)
+    private void SetupCursor(IEnumerable<TEvent> existingEvents)
     {
         var ordered = existingEvents
             .ToList();
