@@ -7,6 +7,7 @@
 
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
+        <RootNamespace>EventSourcingEngine.UnitTests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -24,7 +25,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\EventSourcingEngine\EventSourcingEngine.csproj" />
+      <ProjectReference Include="..\WorkflowEngine\WorkflowEngine.csproj" />
     </ItemGroup>
 
 </Project>
