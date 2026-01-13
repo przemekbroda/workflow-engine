@@ -28,11 +28,11 @@ app.MapGet("/execute-tree",  async (IEventSourceTree<TestState, Event> firstEven
     {
         List<Event> events =
         [
-            new Event("AwaitingExecution", 300),
-            new Event("AwaitingResult", 600),
-            new Event("AwaitingResult", 600),
-            new Event("AwaitingResult", 600),
-            new Event("ResultFetched", 600),
+            new("AwaitingExecution", 300),
+            new("AwaitingResult", 600),
+            new("AwaitingResult", 600),
+            new("AwaitingResult", 600),
+            new("ResultFetched", 600),
         ];
 
         events.Reverse();
