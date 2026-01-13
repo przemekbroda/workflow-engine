@@ -33,7 +33,7 @@ public class TreeProviderTests
         
         // Act & Assert
         var exception = Assert.Throws<EventSourcingEngineTreeValidationException>(() =>
-            new TestingTreeProvider(serviceProviderMock.Object));
+            new NotProvidedInDITreeProvider(serviceProviderMock.Object));
         
         Assert.Equal($"Executor {nameof(Node6)} has not been provided to DI", exception.Message);
     }
@@ -49,7 +49,7 @@ public class TreeProviderTests
         var exception = Assert.Throws<EventSourcingEngineTreeValidationException>(() =>
             new SameEventsTreeProvider(serviceProviderMock.Object));
         
-        Assert.Equal("Child nodes handles same event (Event42) as other node with the same parent node", exception.Message);
+        Assert.Equal($"Child nodes handles same event ({typeof(TreeEvent.Event8)}) as other node with the same parent node", exception.Message);
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public class TreeProviderTests
         var exception = Assert.Throws<EventSourcingEngineTreeValidationException>(() =>
             new NotValidProducedEventTreeProvider(serviceProviderMock.Object));
         
-        Assert.Equal($"Node with an executor {nameof(Node6)} handles event WeirdEvent that is not produced by parent node with an executor {nameof(Node4)} or by itself", exception.Message);
+        Assert.Equal($"Node with an executor {nameof(Node6)} handles event {typeof(TreeEvent.WeirdEvent)} that is not produced by parent node with an executor {nameof(Node4)} or by itself", exception.Message);
     }
 
     [Fact]
