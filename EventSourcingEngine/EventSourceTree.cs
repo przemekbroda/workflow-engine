@@ -79,13 +79,9 @@ public abstract class EventSourceTree<TState, TEvent>
             {
                 PopProcessedEvent();
             }
-            else
-            {
-                return eventNodeInst;
-            }
                 
             // It might be possible that same node should handle next event
-            if (_cursor.InitEvents.Count > 0 && ShouldHandleStateUpdate(eventNodeInst))
+            if (_cursor.InitEvents.Count > 1 && ShouldHandleStateUpdate(eventNodeInst))
             {
                 return await ResumeTree(eventNodeInst, cancellationToken);
             }
