@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TestEventSourcingApproach")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5cb8b311817f950781e0fb32c8f28371ea9f810b")]
 [assembly: System.Reflection.AssemblyProductAttribute("TestEventSourcingApproach")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TestEventSourcingApproach")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

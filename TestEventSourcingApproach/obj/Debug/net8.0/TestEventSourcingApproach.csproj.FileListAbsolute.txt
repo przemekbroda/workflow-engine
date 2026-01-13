@@ -31,3 +31,7 @@
 /Users/przemek/RiderProjects/TestEventSourcingApproach/TestEventSourcingApproach/obj/Debug/net8.0/TestEventSourcingApproach.pdb
 /Users/przemek/RiderProjects/TestEventSourcingApproach/TestEventSourcingApproach/obj/Debug/net8.0/TestEventSourcingApproach.genruntimeconfig.cache
 /Users/przemek/RiderProjects/TestEventSourcingApproach/TestEventSourcingApproach/obj/Debug/net8.0/ref/TestEventSourcingApproach.dll
+/Users/przemek/RiderProjects/TestEventSourcingApproach/TestEventSourcingApproach/bin/Debug/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll
+/Users/przemek/RiderProjects/TestEventSourcingApproach/TestEventSourcingApproach/bin/Debug/net8.0/EventSourcingEngine.dll
+/Users/przemek/RiderProjects/TestEventSourcingApproach/TestEventSourcingApproach/bin/Debug/net8.0/EventSourcingEngine.pdb
+/Users/przemek/RiderProjects/TestEventSourcingApproach/TestEventSourcingApproach/obj/Debug/net8.0/TestEventSourcingApproach.sourcelink.json

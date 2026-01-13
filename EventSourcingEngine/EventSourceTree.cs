@@ -1,4 +1,4 @@
-
+using EventSourcingEngine.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace EventSourcingEngine;
@@ -24,15 +24,15 @@ public abstract class EventSourceTree<TState> where TState : new()
 
         if (_eventNode is null)
         {
-            throw new Exception("asdas");
+            throw new EventSourcingEngineException("No nodes were provided for event sourcing engine");
         }
         
         _eventNodeInst = InstantiateNode(_eventNode);
     }
 
-    public void SetupCursor(List<Event> executedEvents)
+    public void SetupCursor(List<Event> existingEvents)
     {
-        var ordered = executedEvents
+        var ordered = existingEvents
             .ToList();
 
         ordered.Reverse();
@@ -48,10 +48,11 @@ public abstract class EventSourceTree<TState> where TState : new()
         _cursor = treeCursor;
     }
 
-    public void InitializeState()
+    private void  InitializeState(Func<object?, TState> stateInitializer)
     {
-        _cursor.State = _cursor.CurrentEvent.Payload is TState state ? state : default;
+        _cursor.State = stateInitializer(_cursor.CurrentEvent.Payload);
 
+        //if tree only contains one init event - initial event, don't pop it from the stack
         if (_cursor.InitEvents.Count > 1)
         {
             PopProcessedEvent();
@@ -98,9 +99,19 @@ public abstract class EventSourceTree<TState> where TState : new()
         return eventNodeInst;
     }
 
-    public async Task ExecuteTree(CancellationToken cancellationToken)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <param name="stateInitializer">
+    ///     Function that initializes the state, argument of the func is the payload of the first event.
+    ///     It is being executed only once just after ExecuteTree method call. If first event's payload is null,
+    ///     then passed object to the function will also be null
+    /// </param>
+    /// <exception cref="Exception"></exception>
+    public async Task ExecuteTree(Func<object?, TState> stateInitializer, CancellationToken cancellationToken)
     {
-        InitializeState();
+        InitializeState(stateInitializer);
         
         var eventNodeInst = await ResumeTree(_eventNodeInst, cancellationToken);
 
@@ -126,6 +137,8 @@ public abstract class EventSourceTree<TState> where TState : new()
 
             await eventNode.Executor.TryUpdateState(generatedEvent, cancellationToken);
         }
+
+        cancellationToken.ThrowIfCancellationRequested();
 
         foreach (var nextExecutor in eventNode.NextExecutors)
         {
@@ -180,10 +193,12 @@ public abstract class EventSourceTree<TState> where TState : new()
 
     private bool ShouldHandleStateUpdate(EventNodeInst<TState> eventNodeInst)
     {
-        var producesEvent = eventNodeInst.Executor.ProducesEvents.Contains(_cursor.CurrentEvent.EventName);
-        var couldPeek = _cursor.ProcessedEvents.TryPeek(out var previousEvent);
-        var handlesLastProcessedEvent = eventNodeInst.Executor.HandlesEvents.Contains(couldPeek ? previousEvent!.EventName : _cursor.CurrentEvent.EventName);
+        // probably not needed
+        // var previousEventExists = _cursor.ProcessedEvents.TryPeek(out var previousEvent);
+        // var handlesLastProcessedEvent = eventNodeInst.Executor.HandlesEvents.Contains(previousEventExists ? previousEvent!.EventName : _cursor.CurrentEvent.EventName);
 
-        return producesEvent && handlesLastProcessedEvent;
+        var producesEvent = eventNodeInst.Executor.ProducesEvents.Contains(_cursor.CurrentEvent.EventName);
+        
+        return producesEvent;
     }
 }
