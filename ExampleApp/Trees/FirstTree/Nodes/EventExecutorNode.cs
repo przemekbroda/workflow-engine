@@ -4,7 +4,7 @@ namespace ExampleApp.Trees.FirstTree.Nodes;
 
 public class EventExecutorNode : BaseNodeExecutor<TestState, FirstTreeEvent>
 {
-    public override async Task<FirstTreeEvent> ExecuteAsync(FirstTreeEvent e, CancellationToken cancellationToken)
+    public override async Task<FirstTreeEvent> ExecuteAsync(FirstTreeEvent @event, CancellationToken cancellationToken)
     {
         return new FirstTreeEvent.ResultFetched(500);
     }
