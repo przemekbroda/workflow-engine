@@ -10,8 +10,16 @@ public interface IEventSourceTree<TState, TEvent, TTreeProvider>
     /// <summary>
     /// Executes event sourcing tree with given state initializer
     /// </summary>
-    /// <param name="initialCursorEvents"></param>
-    /// <param name="stateInitializer"></param>
+    /// <param name="events"></param>
+    /// <param name="stateInitializer">State initializer</param>
     /// <param name="cancellationToken"></param>
-    public Task<ExecuteTreeResult<TState, TEvent>> ExecuteTree(IList<TEvent> initialCursorEvents, Func<TEvent, TState> stateInitializer, CancellationToken cancellationToken);
+    public Task<ExecuteTreeResult<TState, TEvent>> ExecuteTree(IList<TEvent> events, Func<TEvent, TState> stateInitializer, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Used solely to recreate state based on provided events and state initializer
+    /// </summary>
+    /// <param name="events">Events for state recreation</param>
+    /// <param name="stateInitializer">State initializer</param>
+    /// <returns>Recreated state</returns>
+    public TState RecreateState(IList<TEvent> events, Func<TEvent, TState> stateInitializer);
 }
