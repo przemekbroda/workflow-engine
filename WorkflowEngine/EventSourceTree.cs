@@ -47,7 +47,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
         var cursor = SetupCursor(events, stateInitializer);
         
         //if the tree only contains one init event - initial event, don't pop it from the stack
-        if (cursor.InitEvents.Count > 1)
+        if (cursor.InitEventsStack.Count > 1)
         {
             PopProcessedEvent(cursor);
         }
@@ -66,7 +66,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
         var cursor = SetupCursor(events, stateInitializer);
         
         //if the tree only contains one init event - initial event, don't pop it from the stack
-        if (cursor.InitEvents.Count > 1)
+        if (cursor.InitEventsStack.Count > 1)
         {
             PopProcessedEvent(cursor);
         }
@@ -110,7 +110,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
     {
         var treeCursor = new Cursor<TState, TEvent>
         {
-            InitEvents = new Stack<TEvent>(existingEvents)
+            InitEventsStack = new Stack<TEvent>(existingEvents)
         };
 
         if (!_eventNodeInst.Executor.HandlesEvents.Contains(treeCursor.CurrentEvent.GetType()))
@@ -132,7 +132,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
             eventNodeInst.Executor.TryUpdateState(cursor.CurrentEvent);
         }
         
-        if (cursor.InitEvents.Count == 1 && eventNodeInst.Executor.HandlesEvents.Contains(cursor.CurrentEvent.GetType()))
+        if (cursor.InitEventsStack.Count == 1 && eventNodeInst.Executor.HandlesEvents.Contains(cursor.CurrentEvent.GetType()))
         {
             return eventNodeInst;
         }
@@ -147,7 +147,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
             return null;
         }
         
-        if (cursor.InitEvents.Count > 1)
+        if (cursor.InitEventsStack.Count > 1)
         {
             PopProcessedEvent(cursor);
         }
@@ -176,9 +176,9 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
 
     private EventNodeInst<TState, TEvent>? FindNodeToExecuteAndRecreateState(Cursor<TState, TEvent> cursor)
     {
-        if (cursor.ProcessedEvents.Count > 0)
+        if (cursor.ProcessedEventsStack.Count > 0)
         {
-            if (!_eventNodeInst.Executor.HandlesEvents.Contains(cursor.ProcessedEvents.Peek().GetType()) || 
+            if (!_eventNodeInst.Executor.HandlesEvents.Contains(cursor.ProcessedEventsStack.Peek().GetType()) || 
                 !_eventNodeInst.Executor.ProducesEvents.Contains(cursor.CurrentEvent.GetType()))
                 throw new EventSourceEngineResumeException("Cannot resume event sourcing tree");
         }
@@ -253,12 +253,12 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
     private static void UpdateCursorWithNewEvent(TEvent generatedEvent, Cursor<TState, TEvent> cursor)
     {
         PopProcessedEvent(cursor);
-        cursor.InitEvents.Push(generatedEvent);
+        cursor.InitEventsStack.Push(generatedEvent);
     }
 
     private static void PopProcessedEvent(Cursor<TState, TEvent> cursor)
     {
-        var oldEvent = cursor.InitEvents.Pop();
-        cursor.ProcessedEvents.Push(oldEvent);
+        var oldEvent = cursor.InitEventsStack.Pop();
+        cursor.ProcessedEventsStack.Push(oldEvent);
     }
 }
