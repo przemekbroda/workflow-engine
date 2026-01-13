@@ -205,12 +205,11 @@ public abstract class EventSourceTree<TState, TEvent>
 
     private bool ShouldHandleStateUpdate(EventNodeInst<TState, TEvent> eventNodeInst)
     {
-        // probably not needed
-        // var previousEventExists = _cursor.ProcessedEvents.TryPeek(out var previousEvent);
-        // var handlesLastProcessedEvent = eventNodeInst.Executor.HandlesEvents.Contains(previousEventExists ? previousEvent!.EventName : _cursor.CurrentEvent.EventName);
+        var previousEventExists = _cursor.ProcessedEvents.TryPeek(out var previousEvent);
+        var handlesLastProcessedEvent = eventNodeInst.Executor.HandlesEvents.Contains(previousEventExists ? previousEvent!.EventName : _cursor.CurrentEvent.EventName);
 
         var producesEvent = eventNodeInst.Executor.ProducesEvents.Contains(_cursor.CurrentEvent.EventName);
         
-        return producesEvent;
+        return producesEvent && handlesLastProcessedEvent;
     }
 }
