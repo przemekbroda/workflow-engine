@@ -15,7 +15,6 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
     private readonly TreeProvider<TState, TEvent> _treeProvider;
     
     private EventNodeInst<TState, TEvent> _eventNodeInst = null!;
-    private Cursor<TState, TEvent> _cursor = null!;
 
     public EventSourceTree(
         IServiceProvider serviceProvider, 
@@ -34,30 +33,47 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="initialCursorEvents"></param>
+    /// <param name="events"></param>
     /// <param name="cancellationToken"></param>
     /// <param name="stateInitializer">
     ///     Function that initializes the state, argument of the func is the payload of the first event.
     ///     It is being executed only once just after the ExecuteTree method call. If the first event's payload is null,
     ///     then a passed object to the function will also be null
     /// </param>
-    public async Task<ExecuteTreeResult<TState, TEvent>> ExecuteTree(IList<TEvent> initialCursorEvents, Func<TEvent, TState> stateInitializer, CancellationToken cancellationToken)
+    public async Task<ExecuteTreeResult<TState, TEvent>> ExecuteTree(IList<TEvent> events, Func<TEvent, TState> stateInitializer, CancellationToken cancellationToken)
     {
-        ValidateInitialCursorEvents(initialCursorEvents);
+        ValidateInitialCursorEvents(events);
 
-        _cursor = SetupCursor(initialCursorEvents, stateInitializer);
+        var cursor = SetupCursor(events, stateInitializer);
         
         //if the tree only contains one init event - initial event, don't pop it from the stack
-        if (_cursor.InitEvents.Count > 1)
+        if (cursor.InitEvents.Count > 1)
         {
-            PopProcessedEvent();
+            PopProcessedEvent(cursor);
         }
 
-        var finishedWithEvent = await Resume(cancellationToken);
+        var finishedWithEvent = await Resume(cursor, cancellationToken);
         
         _logger.LogDebug("Finished executing event sourcing tree");
 
         return finishedWithEvent;
+    }
+
+    public TState RecreateState(IList<TEvent> events, Func<TEvent, TState> stateInitializer)
+    {
+        ValidateInitialCursorEvents(events);
+
+        var cursor = SetupCursor(events, stateInitializer);
+        
+        //if the tree only contains one init event - initial event, don't pop it from the stack
+        if (cursor.InitEvents.Count > 1)
+        {
+            PopProcessedEvent(cursor);
+        }
+
+        FindNodeToExecuteAndRecreateState(cursor);
+
+        return cursor.State;
     }
 
     private void ValidateInitialCursorEvents(IList<TEvent> initialCursorEvents)
@@ -107,16 +123,16 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
         return treeCursor;
     }
     
-    private EventNodeInst<TState, TEvent>? ResumeTree(EventNodeInst<TState, TEvent> eventNodeInst)
+    private EventNodeInst<TState, TEvent>? ResumeTree(EventNodeInst<TState, TEvent> eventNodeInst, Cursor<TState, TEvent> cursor)
     {
-        eventNodeInst.Executor.Cursor = _cursor;
+        eventNodeInst.Executor.Cursor = cursor;
         
-        if (ShouldHandleStateUpdate(eventNodeInst))
+        if (ShouldHandleStateUpdate(eventNodeInst, cursor))
         {
-            eventNodeInst.Executor.TryUpdateState(_cursor.CurrentEvent);
+            eventNodeInst.Executor.TryUpdateState(cursor.CurrentEvent);
         }
         
-        if (_cursor.InitEvents.Count == 1 && eventNodeInst.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.GetType()))
+        if (cursor.InitEvents.Count == 1 && eventNodeInst.Executor.HandlesEvents.Contains(cursor.CurrentEvent.GetType()))
         {
             return eventNodeInst;
         }
@@ -124,44 +140,52 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
         List<EventNodeInst<TState, TEvent>> nextExecutors = [..eventNodeInst.NextExecutors, eventNodeInst];
 
         // TODO maybe single is not required here and should be FirstOrDefault as it is guaranteed by tree validation for node to handle the same event as other sibling nodes
-        var nextExecutor = nextExecutors.SingleOrDefault(ne => ne.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.GetType()));
+        var nextExecutor = nextExecutors.SingleOrDefault(ne => ne.Executor.HandlesEvents.Contains(cursor.CurrentEvent.GetType()));
 
         if (nextExecutor is null)
         {
             return null;
         }
         
-        if (_cursor.InitEvents.Count > 1)
+        if (cursor.InitEvents.Count > 1)
         {
-            PopProcessedEvent();
+            PopProcessedEvent(cursor);
         }
 
-        return ResumeTree(nextExecutor);
+        return ResumeTree(nextExecutor, cursor);
     }
 
     /// <summary>
     /// 
     /// </summary>
+    /// <param name="cursor"></param>
     /// <param name="cancellationToken"></param>
     /// <exception cref="EventSourceEngineResumeException">Thrown when could not find a node that can handle the latest event</exception>
     /// <exception cref="OperationCanceledException">The token has had cancellation requested.</exception>
-    private async Task<ExecuteTreeResult<TState, TEvent>> Resume(CancellationToken cancellationToken)
+    private async Task<ExecuteTreeResult<TState, TEvent>> Resume(Cursor<TState, TEvent> cursor, CancellationToken cancellationToken)
     {
-        if (_cursor.ProcessedEvents.Count > 0)
-        {
-            if (!_eventNodeInst.Executor.HandlesEvents.Contains(_cursor.ProcessedEvents.Peek().GetType()) || 
-                !_eventNodeInst.Executor.ProducesEvents.Contains(_cursor.CurrentEvent.GetType()))
-                throw new EventSourceEngineResumeException("Cannot resume event sourcing tree");
-        }
+        var eventNodeInst = FindNodeToExecuteAndRecreateState(cursor);
         
-        var eventNodeInst = ResumeTree(_eventNodeInst);
-
         if (eventNodeInst is null)
         {
             throw new EventSourceEngineResumeException("Cannot resume event sourcing tree");
         }
+
+        return await TryExecuteNode(eventNodeInst, cursor, cancellationToken);
+    }
+
+    private EventNodeInst<TState, TEvent>? FindNodeToExecuteAndRecreateState(Cursor<TState, TEvent> cursor)
+    {
+        if (cursor.ProcessedEvents.Count > 0)
+        {
+            if (!_eventNodeInst.Executor.HandlesEvents.Contains(cursor.ProcessedEvents.Peek().GetType()) || 
+                !_eventNodeInst.Executor.ProducesEvents.Contains(cursor.CurrentEvent.GetType()))
+                throw new EventSourceEngineResumeException("Cannot resume event sourcing tree");
+        }
         
-        return await TryExecuteNode(eventNodeInst, cancellationToken);
+        var eventNodeInst = ResumeTree(_eventNodeInst, cursor);
+
+        return eventNodeInst;
     }
 
     /// <summary>
@@ -169,35 +193,39 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
     /// </summary>
     /// <param name="eventNode"></param>
     /// <param name="cancellationToken"></param>
+    /// <param name="cursor"></param>
     /// <exception cref="OperationCanceledException">The token has had cancellation requested.</exception>
-    private async Task<ExecuteTreeResult<TState, TEvent>> TryExecuteNode(EventNodeInst<TState, TEvent> eventNode, CancellationToken cancellationToken)
+    private async Task<ExecuteTreeResult<TState, TEvent>> TryExecuteNode(
+        EventNodeInst<TState, TEvent> eventNode,
+        Cursor<TState, TEvent> cursor, 
+        CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         
-        eventNode.Executor.Cursor = _cursor;
+        eventNode.Executor.Cursor = cursor;
         
-        if (eventNode.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.GetType()))
+        if (eventNode.Executor.HandlesEvents.Contains(cursor.CurrentEvent.GetType()))
         {
-            var generatedEvent = await eventNode.Executor.ExecuteAsync(_cursor.CurrentEvent, cancellationToken);
+            var generatedEvent = await eventNode.Executor.ExecuteAsync(cursor.CurrentEvent, cancellationToken);
             
-            UpdateCursorWithNewEvent(generatedEvent);
+            UpdateCursorWithNewEvent(generatedEvent, cursor);
             
-            _cursor.State = eventNode.Executor.TryUpdateState(generatedEvent);
+            cursor.State = eventNode.Executor.TryUpdateState(generatedEvent);
             
             await eventNode.Executor.AfterExecutionAndStateUpdate(generatedEvent, cancellationToken);
         }
         
         foreach (var nextExecutor in eventNode.NextExecutors)
         {
-            nextExecutor.Executor.Cursor = _cursor;
+            nextExecutor.Executor.Cursor = cursor;
             
-            if (nextExecutor.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.GetType()))
+            if (nextExecutor.Executor.HandlesEvents.Contains(cursor.CurrentEvent.GetType()))
             {
-                return await TryExecuteNode(nextExecutor, cancellationToken);
+                return await TryExecuteNode(nextExecutor, cursor, cancellationToken);
             }
         }
         
-        return new ExecuteTreeResult<TState, TEvent>(_cursor.State, _cursor.CurrentEvent);
+        return new ExecuteTreeResult<TState, TEvent>(cursor.State, cursor.CurrentEvent);
     }
 
     private EventNodeInst<TState, TEvent> InstantiateNode(EventNode<TState, TEvent> eventNode)
@@ -217,20 +245,20 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
         return eventNodeInst;
     }
 
-    private bool ShouldHandleStateUpdate(EventNodeInst<TState, TEvent> eventNodeInst)
+    private static bool ShouldHandleStateUpdate(EventNodeInst<TState, TEvent> eventNodeInst, Cursor<TState, TEvent> cursor)
     {
-        return eventNodeInst.Executor.ProducesEvents.Contains(_cursor.CurrentEvent.GetType());
+        return eventNodeInst.Executor.ProducesEvents.Contains(cursor.CurrentEvent.GetType());
     }
     
-    private void UpdateCursorWithNewEvent(TEvent generatedEvent)
+    private static void UpdateCursorWithNewEvent(TEvent generatedEvent, Cursor<TState, TEvent> cursor)
     {
-        PopProcessedEvent();
-        _cursor.InitEvents.Push(generatedEvent);
+        PopProcessedEvent(cursor);
+        cursor.InitEvents.Push(generatedEvent);
     }
 
-    private void PopProcessedEvent()
+    private static void PopProcessedEvent(Cursor<TState, TEvent> cursor)
     {
-        var oldEvent = _cursor.InitEvents.Pop();
-        _cursor.ProcessedEvents.Push(oldEvent);
+        var oldEvent = cursor.InitEvents.Pop();
+        cursor.ProcessedEvents.Push(oldEvent);
     }
 }
