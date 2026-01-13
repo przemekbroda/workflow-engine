@@ -41,6 +41,8 @@ namespace ExampleApp.Postgres.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("LastModifiedAt");
+
                     b.ToTable("ProcessRequests");
                 });
 
