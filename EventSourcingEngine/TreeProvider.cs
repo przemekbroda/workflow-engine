@@ -3,7 +3,7 @@ using EventSourcingEngine.Exceptions;
 namespace EventSourcingEngine;
 
 public abstract class TreeProvider<TState, TEvent> 
-    where TState : class
+    where TState : struct
     where TEvent : class
 {
     internal HashSet<Type> HandledEvents { get; } = [];
@@ -62,7 +62,7 @@ public abstract class TreeProvider<TState, TEvent>
         {
             if (!eventTypes.Add(producesEventName))
             {
-                throw new EventSourcingEngineTreeValidationException($"Child nodes handles same event ({producesEventName}) as other node with the same parent node");
+                throw new EventSourcingEngineTreeValidationException($"Child node handles same event ({producesEventName}) as other node with the same parent node");
             }
         }
     }
