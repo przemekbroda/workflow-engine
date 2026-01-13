@@ -6,6 +6,6 @@ public class Cursor<TState, TEvent>
 {
     public required TState State { get; set; }
     public TEvent CurrentEvent => InitEvents.Peek();
-    public Stack<TEvent> InitEvents { get; init; } = new();
+    public Stack<TEvent> InitEvents { get; internal init; } = new();
     public Stack<TEvent> ProcessedEvents { get; } = new();
 }

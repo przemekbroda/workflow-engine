@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddScoped<FirstEventSourceTree>();
+builder.Services.RegisterTree<TestState, Event, FirstTreeProvider>();
 builder.Services.AddTransient<EventExecutorNode>();
 builder.Services.AddTransient<ResultSaverNode>();
 
@@ -24,20 +24,23 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapGet("/execute-tree",  async (FirstEventSourceTree firstEventSourceTree, CancellationToken cancellationToken) =>
+app.MapGet("/execute-tree",  async (IEventSourceTree<TestState, Event> firstEventSourceTree, CancellationToken cancellationToken) =>
     {
-        firstEventSourceTree.SetupCursor([
+        List<Event> events =
+        [
             new Event("AwaitingExecution", 300),
             new Event("AwaitingResult", 600),
             new Event("AwaitingResult", 600),
             new Event("AwaitingResult", 600),
             new Event("ResultFetched", 600),
-        ]);
-        
-        await firstEventSourceTree.ExecuteTree(payload => new TestState
+        ];
+
+        var stateInitializer = (object? payload) => new TestState
         {
             Balance = (int)payload!
-        }, cancellationToken);
+        };
+        
+        await firstEventSourceTree.ExecuteTree(events, stateInitializer, cancellationToken);
     })
     .WithName("GetWeatherForecast")
     .WithOpenApi();
