@@ -3,12 +3,14 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace EventSourcingEngine;
 
-public abstract class EventSourceTree<TState> where TState : new()
+public abstract class EventSourceTree<TState, TEvent> 
+    where TState : new()
+    where TEvent : Event
 {
-    private EventNode<TState> _eventNode = null!;
-    private EventNodeInst<TState> _eventNodeInst = null!;
+    private EventNode<TState, TEvent> _eventNode = null!;
+    private EventNodeInst<TState, TEvent> _eventNodeInst = null!;
     private readonly IServiceProvider _serviceProvider;
-    private Cursor<TState> _cursor = null!;
+    private Cursor<TState, TEvent> _cursor = null!;
 
     protected EventSourceTree(IServiceProvider serviceProvider)
     {
@@ -16,7 +18,7 @@ public abstract class EventSourceTree<TState> where TState : new()
         ResolveTree();
     }
 
-    protected abstract EventNode<TState> ProvideTree();
+    protected abstract EventNode<TState, TEvent> ProvideTree();
 
     private void ResolveTree()
     {
@@ -30,16 +32,16 @@ public abstract class EventSourceTree<TState> where TState : new()
         _eventNodeInst = InstantiateNode(_eventNode);
     }
 
-    public void SetupCursor(List<Event> existingEvents)
+    public void SetupCursor(List<TEvent> existingEvents)
     {
         var ordered = existingEvents
             .ToList();
 
         ordered.Reverse();
 
-        var stack = new Stack<Event>(ordered);
+        var stack = new Stack<TEvent>(ordered);
 
-        var treeCursor = new Cursor<TState>
+        var treeCursor = new Cursor<TState, TEvent>
         {
             State = new TState(),
             InitEvents = stack
@@ -59,7 +61,7 @@ public abstract class EventSourceTree<TState> where TState : new()
         }
     }
     
-    private async Task<EventNodeInst<TState>?> ResumeTree(EventNodeInst<TState> eventNodeInst, CancellationToken cancellationToken)
+    private async Task<EventNodeInst<TState, TEvent>?> ResumeTree(EventNodeInst<TState, TEvent> eventNodeInst, CancellationToken cancellationToken)
     {
         eventNodeInst.Executor.Cursor = _cursor;
 
@@ -125,7 +127,7 @@ public abstract class EventSourceTree<TState> where TState : new()
         Console.WriteLine("finished processing");
     }
 
-    private async Task TryExecuteNode(EventNodeInst<TState> eventNode, CancellationToken cancellationToken)
+    private async Task TryExecuteNode(EventNodeInst<TState, TEvent> eventNode, CancellationToken cancellationToken)
     {
         eventNode.Executor.Cursor = _cursor;
         
@@ -152,7 +154,7 @@ public abstract class EventSourceTree<TState> where TState : new()
         }
     }
 
-    private void UpdateCursorWithNewEvent(Event generatedEvent)
+    private void UpdateCursorWithNewEvent(TEvent generatedEvent)
     {
         PopProcessedEvent();
         _cursor.InitEvents.Push(generatedEvent);
@@ -164,16 +166,16 @@ public abstract class EventSourceTree<TState> where TState : new()
         _cursor.ProcessedEvents.Push(oldEvent);
     }
 
-    private EventNodeInst<TState> InstantiateNode(EventNode<TState> eventNode)
+    private EventNodeInst<TState, TEvent> InstantiateNode(EventNode<TState, TEvent> eventNode)
     {
         ValidateNodeType(eventNode);
 
-        if (_serviceProvider.GetRequiredService(eventNode.Executor) is not INodeExecutor<TState> nodeExecutor)
+        if (_serviceProvider.GetRequiredService(eventNode.Executor) is not INodeExecutor<TState, TEvent> nodeExecutor)
         {
             throw new Exception("Could not find provided object");
         }
         
-        var eventNodeInst = new EventNodeInst<TState>(
+        var eventNodeInst = new EventNodeInst<TState, TEvent>(
             nodeExecutor,
             eventNode.NextExecutors.Select(InstantiateNode).ToList());
 
@@ -183,9 +185,9 @@ public abstract class EventSourceTree<TState> where TState : new()
         return eventNodeInst;
     }
 
-    private static void ValidateNodeType(EventNode<TState> eventNode)
+    private static void ValidateNodeType(EventNode<TState, TEvent> eventNode)
     {
-        if (!typeof(INodeExecutor<TState>).IsAssignableFrom(eventNode.Executor))
+        if (!typeof(INodeExecutor<TState, TEvent>).IsAssignableFrom(eventNode.Executor))
         {
             throw new Exception("dupa zbita");
         }
@@ -201,7 +203,7 @@ public abstract class EventSourceTree<TState> where TState : new()
         }
     }
 
-    private bool ShouldHandleStateUpdate(EventNodeInst<TState> eventNodeInst)
+    private bool ShouldHandleStateUpdate(EventNodeInst<TState, TEvent> eventNodeInst)
     {
         // probably not needed
         // var previousEventExists = _cursor.ProcessedEvents.TryPeek(out var previousEvent);

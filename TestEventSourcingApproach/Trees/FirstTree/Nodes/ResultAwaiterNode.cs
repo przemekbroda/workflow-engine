@@ -2,7 +2,7 @@ using EventSourcingEngine;
 
 namespace TestEventSourcingApproach.Trees.FirstTree.Nodes;
 
-public class ResultAwaiterNode : BaseNodeExecutor<TestState>
+public class ResultAwaiterNode : BaseNodeExecutor<TestState, Event>
 {
     public override async Task<Event> ExecuteAsync(Event e, CancellationToken cancellationToken)
     {

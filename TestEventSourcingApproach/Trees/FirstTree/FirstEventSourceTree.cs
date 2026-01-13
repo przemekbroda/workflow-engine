@@ -3,11 +3,11 @@ using TestEventSourcingApproach.Trees.FirstTree.Nodes;
 
 namespace TestEventSourcingApproach.Trees.FirstTree;
 
-public sealed class FirstEventSourceTree(IServiceProvider serviceProvider) : EventSourceTree<TestState>(serviceProvider)
+public sealed class FirstEventSourceTree(IServiceProvider serviceProvider) : EventSourceTree<TestState, Event>(serviceProvider)
 {
-    protected override EventNode<TestState> ProvideTree()
+    protected override EventNode<TestState, Event> ProvideTree()
     {
-        return new EventNode<TestState>(
+        return new EventNode<TestState, Event>(
             [
                 "AwaitingExecution",
                 "AwaitingResult"
@@ -18,7 +18,7 @@ public sealed class FirstEventSourceTree(IServiceProvider serviceProvider) : Eve
                 "ResultFetched"
             ],
             [
-                new EventNode<TestState>(
+                new EventNode<TestState, Event>(
                     [
                         "ResultFetched",
                         "ResultSaveError"

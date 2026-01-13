@@ -3,7 +3,7 @@ using TestEventSourcingApproach.Trees.FirstTree.Payloads;
 
 namespace TestEventSourcingApproach.Trees.FirstTree.Nodes;
 
-public class ResultSaverNode : BaseNodeExecutor<TestState>
+public class ResultSaverNode : BaseNodeExecutor<TestState, Event>
 {
     public override async Task<Event> ExecuteAsync(Event e, CancellationToken cancellationToken)
     {

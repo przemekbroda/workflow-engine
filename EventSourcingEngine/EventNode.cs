@@ -1,5 +1,7 @@
 namespace EventSourcingEngine;
 
-public record EventNode<TState>(HashSet<string> HandlesEvents, Type Executor, HashSet<string> ProducesEvents, List<EventNode<TState>> NextExecutors);
+public record EventNode<TState, TEvent>(HashSet<string> HandlesEvents, Type Executor, HashSet<string> ProducesEvents, List<EventNode<TState, TEvent>> NextExecutors);
 
-internal record EventNodeInst<TState>(INodeExecutor<TState> Executor, List<EventNodeInst<TState>> NextExecutors) where TState : new();
+internal record EventNodeInst<TState, TEvent>(INodeExecutor<TState, TEvent> Executor, List<EventNodeInst<TState, TEvent>> NextExecutors) 
+    where TState : new()
+    where TEvent : Event;
