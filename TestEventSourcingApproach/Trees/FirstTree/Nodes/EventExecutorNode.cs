@@ -9,7 +9,7 @@ public class EventExecutorNode : BaseNodeExecutor<TestState, Event>
         return new Event("ResultFetched", 500);
     }
 
-    public override async Task UpdateState(Event e, CancellationToken cancellationToken)
+    public override void UpdateState(Event e)
     {
         if (e.EventName == "AwaitingResult")
         {

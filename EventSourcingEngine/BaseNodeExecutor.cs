@@ -10,16 +10,16 @@ public abstract class BaseNodeExecutor<TState, TEvent> : INodeExecutor<TState, T
     public required HashSet<string> ProducesEvents { get; set; }
     public required HashSet<string> HandlesEvents { get; set; }
     
-    public abstract Task UpdateState(TEvent e, CancellationToken cancellationToken);
+    public abstract void UpdateState(TEvent e);
     public abstract Task<TEvent> ExecuteAsync(TEvent e, CancellationToken cancellationToken);
 
-    public async Task TryUpdateState(TEvent e, CancellationToken cancellationToken)
+    public void TryUpdateState(TEvent e)
     {
         if (!ProducesEvents.Contains(e.EventName))
         {
             throw new EventSourcingEngineException("Cannot handle state update");
         }
 
-        await UpdateState(e, cancellationToken);
+        UpdateState(e);
     }
 }

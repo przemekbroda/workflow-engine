@@ -61,7 +61,7 @@ public abstract class EventSourceTree<TState, TEvent>
         }
     }
     
-    private async Task<EventNodeInst<TState, TEvent>?> ResumeTree(EventNodeInst<TState, TEvent> eventNodeInst, CancellationToken cancellationToken)
+    private EventNodeInst<TState, TEvent>? ResumeTree(EventNodeInst<TState, TEvent> eventNodeInst)
     {
         eventNodeInst.Executor.Cursor = _cursor;
 
@@ -73,7 +73,7 @@ public abstract class EventSourceTree<TState, TEvent>
         if (ShouldHandleStateUpdate(eventNodeInst))
         {
             Console.WriteLine($"Updating state in the {eventNodeInst.Executor.GetType().Name}");
-            await eventNodeInst.Executor.TryUpdateState(_cursor.CurrentEvent, cancellationToken);
+            eventNodeInst.Executor.TryUpdateState(_cursor.CurrentEvent);
 
             if (_cursor.InitEvents.Count > 1)
             {
@@ -83,20 +83,20 @@ public abstract class EventSourceTree<TState, TEvent>
             // It might be possible that same node should handle next event
             if (_cursor.InitEvents.Count > 1 && ShouldHandleStateUpdate(eventNodeInst))
             {
-                return await ResumeTree(eventNodeInst, cancellationToken);
+                return ResumeTree(eventNodeInst);
             }
             
-            return await TryResumeInNextExecutors(eventNodeInst, cancellationToken);
+            return TryResumeInNextExecutors(eventNodeInst);
         }
         
         return null;
     }
 
-    private async Task<EventNodeInst<TState, TEvent>?> TryResumeInNextExecutors(EventNodeInst<TState, TEvent> eventNodeInst, CancellationToken cancellationToken)
+    private EventNodeInst<TState, TEvent>? TryResumeInNextExecutors(EventNodeInst<TState, TEvent> eventNodeInst)
     {
         foreach (var nextExecutor in eventNodeInst.NextExecutors)
         {
-            var toResume = await ResumeTree(nextExecutor, cancellationToken);
+            var toResume = ResumeTree(nextExecutor);
             if (toResume is not null)
             {
                 return toResume;
@@ -127,7 +127,7 @@ public abstract class EventSourceTree<TState, TEvent>
 
     private async Task ResumeAndExecuteEventNode(CancellationToken cancellationToken)
     {
-        var eventNodeInst = await ResumeTree(_eventNodeInst, cancellationToken);
+        var eventNodeInst = ResumeTree(_eventNodeInst);
 
         if (eventNodeInst is null)
         {
@@ -139,6 +139,8 @@ public abstract class EventSourceTree<TState, TEvent>
 
     private async Task TryExecuteNode(EventNodeInst<TState, TEvent> eventNode, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        
         eventNode.Executor.Cursor = _cursor;
         
         if (eventNode.Executor.HandlesEvents.Contains(_cursor.CurrentEvent.EventName))
@@ -147,11 +149,9 @@ public abstract class EventSourceTree<TState, TEvent>
 
             UpdateCursorWithNewEvent(generatedEvent);
 
-            await eventNode.Executor.TryUpdateState(generatedEvent, cancellationToken);
+            eventNode.Executor.TryUpdateState(generatedEvent);
         }
-
-        cancellationToken.ThrowIfCancellationRequested();
-
+        
         foreach (var nextExecutor in eventNode.NextExecutors)
         {
             nextExecutor.Executor.Cursor = _cursor;

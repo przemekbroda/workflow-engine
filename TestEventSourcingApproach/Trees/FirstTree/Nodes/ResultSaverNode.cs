@@ -12,7 +12,8 @@ public class ResultSaverNode : BaseNodeExecutor<TestState, Event>
             Console.WriteLine($"Amount: {Cursor.State.Balance}");
             return new Event("ResultSaveError", new ResultSaveErrorPayload());
         }
-        else if (e.EventName == "ResultSaveError")
+
+        if (e.EventName == "ResultSaveError")
         {
             return new Event("ResultSaved", null);
         }
@@ -20,7 +21,7 @@ public class ResultSaverNode : BaseNodeExecutor<TestState, Event>
         throw new Exception($"unhandled event: {e.EventName}");
     }
 
-    public override async Task UpdateState(Event e, CancellationToken cancellationToken)
+    public override void UpdateState(Event e)
     {
         if (e.EventName == "ResultSaveError")
         {
