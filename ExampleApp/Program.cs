@@ -1,6 +1,6 @@
 using EventSourcingEngine;
-using TestEventSourcingApproach.Trees.FirstTree;
-using TestEventSourcingApproach.Trees.FirstTree.Nodes;
+using ExampleApp.Trees.FirstTree;
+using ExampleApp.Trees.FirstTree.Nodes;
 
 var builder = WebApplication.CreateBuilder(args);
 

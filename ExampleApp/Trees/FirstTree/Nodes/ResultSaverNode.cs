@@ -1,7 +1,7 @@
 using EventSourcingEngine;
-using TestEventSourcingApproach.Trees.FirstTree.Payloads;
+using ExampleApp.Trees.FirstTree.Payloads;
 
-namespace TestEventSourcingApproach.Trees.FirstTree.Nodes;
+namespace ExampleApp.Trees.FirstTree.Nodes;
 
 public class ResultSaverNode : BaseNodeExecutor<TestState, Event>
 {

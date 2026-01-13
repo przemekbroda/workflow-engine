@@ -1,4 +1,4 @@
-namespace TestEventSourcingApproach.Trees.FirstTree.Payloads;
+namespace ExampleApp.Trees.FirstTree.Payloads;
 
 public class ResultSaveErrorPayload
 {
