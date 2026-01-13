@@ -5,7 +5,7 @@ namespace EventSourcingEngine;
 public static class ServiceCollectionExtensions
 {
     public static IServiceCollection RegisterTree<TState, TEvent, TTreeProvider>(this IServiceCollection serviceCollection, ServiceLifetime eventSourceTreeLifetime = ServiceLifetime.Scoped)
-        where TState : new()
+        where TState : class
         where TEvent : class
         where TTreeProvider : TreeProvider<TState, TEvent>
     {

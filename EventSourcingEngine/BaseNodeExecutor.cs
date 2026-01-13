@@ -3,7 +3,7 @@ using EventSourcingEngine.Exceptions;
 namespace EventSourcingEngine;
 
 public abstract class BaseNodeExecutor<TState, TEvent> : INodeExecutor<TState, TEvent> 
-    where TState : new()
+    where TState : class
     where TEvent : class
 {
     public required Cursor<TState, TEvent> Cursor { get; set; }

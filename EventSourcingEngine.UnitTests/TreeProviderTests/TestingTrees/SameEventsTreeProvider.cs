@@ -2,7 +2,7 @@
 
 namespace EventSourcingEngine.UnitTests.TreeProviderTests.TestingTrees;
 
-public class SameEventsTreeProvider(IServiceProvider serviceProvider) : TreeProvider<TreeState, TreeEvent>(serviceProvider)
+public class SameEventsTreeProvider : TreeProvider<TreeState, TreeEvent>
 {
     public override EventNode<TreeState, TreeEvent> ProvideTree()
     {
