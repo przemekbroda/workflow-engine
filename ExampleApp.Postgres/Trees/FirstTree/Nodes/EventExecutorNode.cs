@@ -8,9 +8,6 @@ public class EventExecutorNode(AppDbContext dbContext) : BaseNodeExecutor<TestSt
 {
     public override async Task<FirstTreeEvent> ExecuteAsync(FirstTreeEvent @event, CancellationToken cancellationToken)
     {
-        //simulates some long task that can be canceled
-        await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
-        
         return new FirstTreeEvent.ResultFetched(500, @event.Index + 1);
     }
 
