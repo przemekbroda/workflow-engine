@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventSourcingEngine", "Even
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventSourcingEngine.UnitTests", "EventSourcingEngine.UnitTests\EventSourcingEngine.UnitTests.csproj", "{03C768F9-5D12-4AF6-A46F-6C1BCE430784}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleApp.Postgres", "ExampleApp.Postgres\ExampleApp.Postgres.csproj", "{AA0E2002-5D72-43D2-8D04-0C0531F69477}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{03C768F9-5D12-4AF6-A46F-6C1BCE430784}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{03C768F9-5D12-4AF6-A46F-6C1BCE430784}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{03C768F9-5D12-4AF6-A46F-6C1BCE430784}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA0E2002-5D72-43D2-8D04-0C0531F69477}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA0E2002-5D72-43D2-8D04-0C0531F69477}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA0E2002-5D72-43D2-8D04-0C0531F69477}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA0E2002-5D72-43D2-8D04-0C0531F69477}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
