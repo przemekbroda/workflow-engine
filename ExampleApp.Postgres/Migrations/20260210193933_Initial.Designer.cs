@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ExampleApp.Postgres.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260101104829_NullableEvent")]
-    partial class NullableEvent
+    [Migration("20260210193933_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -27,11 +27,10 @@ namespace ExampleApp.Postgres.Migrations
 
             modelBuilder.Entity("ExampleApp.Postgres.Models.ProcessRequest", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("uuidv7()");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -39,21 +38,25 @@ namespace ExampleApp.Postgres.Migrations
                     b.Property<DateTime>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("TestStateSnapshot")
+                        .HasColumnType("jsonb");
+
                     b.Property<int>("Version")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("LastModifiedAt");
 
                     b.ToTable("ProcessRequests");
                 });
 
             modelBuilder.Entity("ExampleApp.Postgres.Models.ProcessRequestEvent", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("uuidv7()");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -68,8 +71,8 @@ namespace ExampleApp.Postgres.Migrations
                     b.Property<string>("ProcessRequestEventPayload")
                         .HasColumnType("jsonb");
 
-                    b.Property<long>("ProcessRequestId")
-                        .HasColumnType("bigint");
+                    b.Property<Guid>("ProcessRequestId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 

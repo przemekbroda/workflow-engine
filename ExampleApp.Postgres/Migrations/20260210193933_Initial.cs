@@ -1,7 +1,5 @@
 ﻿using System;
-using ExampleApp.Postgres.Models;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -17,11 +15,11 @@ namespace ExampleApp.Postgres.Migrations
                 name: "ProcessRequests",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuidv7()"),
                     Version = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    LastModifiedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    LastModifiedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    TestStateSnapshot = table.Column<string>(type: "jsonb", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -32,13 +30,12 @@ namespace ExampleApp.Postgres.Migrations
                 name: "ProcessRequestEvents",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuidv7()"),
                     EventName = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Index = table.Column<int>(type: "integer", nullable: false),
-                    ProcessRequestEventPayload = table.Column<ProcessRequestEventPayload>(type: "jsonb", nullable: false),
-                    ProcessRequestId = table.Column<long>(type: "bigint", nullable: false)
+                    ProcessRequestEventPayload = table.Column<string>(type: "jsonb", nullable: true),
+                    ProcessRequestId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -55,6 +52,11 @@ namespace ExampleApp.Postgres.Migrations
                 name: "IX_ProcessRequestEvents_ProcessRequestId",
                 table: "ProcessRequestEvents",
                 column: "ProcessRequestId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProcessRequests_LastModifiedAt",
+                table: "ProcessRequests",
+                column: "LastModifiedAt");
         }
 
         /// <inheritdoc />

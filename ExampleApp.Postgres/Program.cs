@@ -36,11 +36,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapPost("/process", async (AppDbContext dbContext) =>
+app.MapPost("/process", async (AppDbContext dbContext, ILoggerFactory loggerFactory) =>
     {
         var processRequest = new ProcessRequest
         {
-            Id = Guid.CreateVersion7(),
             CreatedAt = DateTime.UtcNow,
             LastModifiedAt = DateTime.UtcNow,
             Version = 1,
