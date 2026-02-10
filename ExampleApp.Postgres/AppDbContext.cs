@@ -30,19 +30,19 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .HasDefaultValueSql("uuidv7()");
         });
 
-        modelBuilder.Entity<ProcessRequestEvent>(entity =>
+        modelBuilder.Entity<ProcessRequest>(entity =>
         {
-            modelBuilder.Entity<ProcessRequest>()
+            entity
                 .HasIndex(e => e.LastModifiedAt);
 
-            modelBuilder.Entity<ProcessRequest>()
+            entity
                 .Property(e => e.TestStateSnapshot)
                 .HasConversion(
                     v => JsonSerializer.Serialize(v, JsonSerializerOptions),
                     v => JsonSerializer.Deserialize<TestState>(v, JsonSerializerOptions),
                     ValueComparer.CreateDefault<TestState>(true));
 
-            modelBuilder.Entity<ProcessRequest>()
+            entity
                 .Property(e => e.Id)
                 .HasDefaultValueSql("uuidv7()");
         });
