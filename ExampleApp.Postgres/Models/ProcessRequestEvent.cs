@@ -7,7 +7,7 @@ namespace ExampleApp.Postgres.Models;
 
 public class ProcessRequestEvent
 {
-    public long Id { get; set; }
+    public Guid Id { get; set; }
     public required string EventName { get; set; }
     public DateTime CreatedAt { get; set; }
     public int Index { get; set; }
@@ -15,7 +15,7 @@ public class ProcessRequestEvent
     public ProcessRequestEventPayload? ProcessRequestEventPayload { get; set; }
 
     public ProcessRequest ProcessRequest { get; set; } = null!;
-    public long ProcessRequestId { get; set; }
+    public Guid ProcessRequestId { get; set; }
 
     public FirstTreeEvent ToTreeEvent()
     {
@@ -30,7 +30,7 @@ public class ProcessRequestEvent
         };
     }
 
-    public static ProcessRequestEvent FromTreeEvent(FirstTreeEvent e, long processRequestId, DateTime createdAt)
+    public static ProcessRequestEvent FromTreeEvent(FirstTreeEvent e, Guid processRequestId, DateTime createdAt)
     {
         return new ProcessRequestEvent
         {

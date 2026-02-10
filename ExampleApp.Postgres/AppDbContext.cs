@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using ExampleApp.Postgres.Models;
+using ExampleApp.Postgres.Trees.FirstTree;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
@@ -15,14 +16,35 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<ProcessRequestEvent>()
-            .Property(e => e.ProcessRequestEventPayload)
-            .HasConversion(
-                v => JsonSerializer.Serialize(v, JsonSerializerOptions),
-                v => JsonSerializer.Deserialize<ProcessRequestEventPayload>(v, JsonSerializerOptions), 
-                ValueComparer.CreateDefault<ProcessRequestEventPayload>(true));
+        modelBuilder.Entity<ProcessRequestEvent>(entity =>
+        {
+            entity
+                .Property(e => e.ProcessRequestEventPayload)
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, JsonSerializerOptions),
+                    v => JsonSerializer.Deserialize<ProcessRequestEventPayload>(v, JsonSerializerOptions),
+                    ValueComparer.CreateDefault<ProcessRequestEventPayload>(true));
 
-        modelBuilder.Entity<ProcessRequest>()
-            .HasIndex(e => e.LastModifiedAt);
+            entity
+                .Property(e => e.Id)
+                .HasDefaultValueSql("uuidv7()");
+        });
+
+        modelBuilder.Entity<ProcessRequestEvent>(entity =>
+        {
+            modelBuilder.Entity<ProcessRequest>()
+                .HasIndex(e => e.LastModifiedAt);
+
+            modelBuilder.Entity<ProcessRequest>()
+                .Property(e => e.TestStateSnapshot)
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, JsonSerializerOptions),
+                    v => JsonSerializer.Deserialize<TestState>(v, JsonSerializerOptions),
+                    ValueComparer.CreateDefault<TestState>(true));
+
+            modelBuilder.Entity<ProcessRequest>()
+                .Property(e => e.Id)
+                .HasDefaultValueSql("uuidv7()");
+        });
     }
 }

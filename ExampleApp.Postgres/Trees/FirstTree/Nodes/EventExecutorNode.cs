@@ -31,7 +31,10 @@ public class EventExecutorNode(AppDbContext dbContext) : BaseNodeExecutor<TestSt
         var dbEvent = ProcessRequestEvent.FromTreeEvent(@event, Cursor.State.ProcessRequestId, DateTime.UtcNow);
         dbContext.ProcessRequestEvents.Add(dbEvent);
         await dbContext.ProcessRequests.Where(r => r.Id == Cursor.State.ProcessRequestId)
-            .ExecuteUpdateAsync(setter => setter.SetProperty(r => r.LastModifiedAt, DateTime.UtcNow), CancellationToken.None);
+            .ExecuteUpdateAsync(setter => setter
+                .SetProperty(r => r.LastModifiedAt, DateTime.UtcNow)
+                .SetProperty(r => r.TestStateSnapshot, Cursor.State), CancellationToken.None);
+        
         await dbContext.SaveChangesAsync(CancellationToken.None);
     }
 }

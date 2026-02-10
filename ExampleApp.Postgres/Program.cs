@@ -40,6 +40,7 @@ app.MapPost("/process", async (AppDbContext dbContext) =>
     {
         var processRequest = new ProcessRequest
         {
+            Id = Guid.CreateVersion7(),
             CreatedAt = DateTime.UtcNow,
             LastModifiedAt = DateTime.UtcNow,
             Version = 1,
@@ -63,7 +64,7 @@ app.MapPost("/process", async (AppDbContext dbContext) =>
     })
     .WithName("GetWeatherForecast");
 
-app.MapGet("/process/{id:long}", async (AppDbContext dbContext, long id) =>
+app.MapGet("/process/{id:guid}", async (AppDbContext dbContext, Guid id) =>
 {
     var result = await dbContext.ProcessRequests
         .Include(x => x.ProcessRequestEvents)
@@ -72,8 +73,8 @@ app.MapGet("/process/{id:long}", async (AppDbContext dbContext, long id) =>
     return TypedResults.Ok(result);
 });
 
-app.MapPatch("/process/{id:long}", async (
-    long id, 
+app.MapPatch("/process/{id:guid}", async (
+    Guid id, 
     AppDbContext dbContext, 
     IEventSourceTree<TestState, FirstTreeEvent, FirstTreeProvider> eventSource, 
     CancellationToken cancellationToken) =>
@@ -136,7 +137,6 @@ app.MapPatch("/process/{id:long}", async (
     
     return TypedResults.Ok();
 });
-
 
 
 app.Run();
