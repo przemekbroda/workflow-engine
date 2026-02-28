@@ -20,7 +20,7 @@ public class SimpleTreeTests
     public static IEnumerable<object[]> AwaitingResultsWithAttempts()
     {
         yield return [Enumerable.Repeat<SimpleTreeEvent>(new SimpleTreeEvent.AwaitingResult(), 1).ToList(), 1];
-        yield return [Enumerable.Repeat<SimpleTreeEvent>(new SimpleTreeEvent.AwaitingResult(),2).ToList(), 2];
+        yield return [Enumerable.Repeat<SimpleTreeEvent>(new SimpleTreeEvent.AwaitingResult(), 2).ToList(), 2];
         yield return [Enumerable.Repeat<SimpleTreeEvent>(new SimpleTreeEvent.AwaitingResult(), 3).ToList(), 3];
         yield return [Enumerable.Repeat<SimpleTreeEvent>(new SimpleTreeEvent.AwaitingResult(), 5).ToList(), 5];
         yield return [Enumerable.Repeat<SimpleTreeEvent>(new SimpleTreeEvent.AwaitingResult(), 8).ToList(), 8];
