@@ -13,16 +13,10 @@ public class SimpleTreeTests
     
     public SimpleTreeTests()
     {
-        var serviceCollection = new ServiceCollection();
-        PrepareNodesMocks();
-        serviceCollection.AddTransient<FirstEventExecutorNode>(_ => _firstEventExecutorNodeMock.Object);
-        serviceCollection.AddTransient<ResultSaverNode>(_ => _resultSaverNodeMock.Object);
-        serviceCollection.AddLogging();
-        serviceCollection.RegisterTree<SimpleTreeState, SimpleTreeEvent, SimpleTreeProvider>();
-        
-        _tree = serviceCollection.BuildServiceProvider().GetRequiredService<IEventSourceTree<SimpleTreeState, SimpleTreeEvent, SimpleTreeProvider>>();
+        ConfigureNodesMocks();
+        _tree = BuildServiceProvider().GetRequiredService<IEventSourceTree<SimpleTreeState, SimpleTreeEvent, SimpleTreeProvider>>();
     }
-
+    
     public static IEnumerable<object[]> AwaitingResultsWithAttempts()
     {
         yield return [Enumerable.Repeat<SimpleTreeEvent>(new SimpleTreeEvent.AwaitingResult(), 1).ToList(), 1];
@@ -54,14 +48,17 @@ public class SimpleTreeTests
         var producedEvent = result.ProducedEvent;
         var producedState = result.ProducedState;
         
+        _firstEventExecutorNodeMock.Verify(x => x.ExecuteAsync(It.Is<SimpleTreeEvent>(e => e is SimpleTreeEvent.AwaitingResult), It.IsAny<CancellationToken>()), Times.Once);
+        _firstEventExecutorNodeMock.Verify(x => x.TryUpdateState(It.Is<SimpleTreeEvent>(e => e is SimpleTreeEvent.AwaitingResult)), Times.Exactly(expectedAttempts));
+        _firstEventExecutorNodeMock.Verify(x => x.TryUpdateState(It.Is<SimpleTreeEvent>(e => e is SimpleTreeEvent.ResultFetched)), Times.Once);
+        
+        _resultSaverNodeMock.Verify(x => x.ExecuteAsync(It.Is<SimpleTreeEvent>(e => e is SimpleTreeEvent.ResultFetched), It.IsAny<CancellationToken>()), Times.Once);
+        _resultSaverNodeMock.Verify(x => x.TryUpdateState(It.Is<SimpleTreeEvent>(e => e is SimpleTreeEvent.ResultSaveError)), Times.Once);
+        
         Assert.IsType<SimpleTreeEvent.ResultSaveError>(producedEvent);
         Assert.Equal(1700, producedState.Balance);
         Assert.Equal(expectedAttempts, producedState.Attempt);
         Assert.Equal("Result save error", producedState.SaveResult!.ErrorMessage);
-        _firstEventExecutorNodeMock.Verify(x => x.ExecuteAsync(It.IsAny<SimpleTreeEvent>(), It.IsAny<CancellationToken>()), Times.Once);
-        _firstEventExecutorNodeMock.Verify(x => x.TryUpdateState(It.IsAny<SimpleTreeEvent>()), Times.Exactly(expectedAttempts + 1));
-        _resultSaverNodeMock.Verify(x => x.ExecuteAsync(It.IsAny<SimpleTreeEvent>(), It.IsAny<CancellationToken>()), Times.Once);
-        _resultSaverNodeMock.Verify(x => x.TryUpdateState(It.IsAny<SimpleTreeEvent>()), Times.Once);
     }
 
     [Fact]
@@ -79,17 +76,18 @@ public class SimpleTreeTests
         // Assert
         var producedEvent = result.ProducedEvent;
         var producedState = result.ProducedState;
+    
+        _firstEventExecutorNodeMock.Verify(x => x.ExecuteAsync(It.Is<SimpleTreeEvent>(e => e is SimpleTreeEvent.AwaitingExecution), It.IsAny<CancellationToken>()), Times.Once);
+        _firstEventExecutorNodeMock.Verify(x => x.TryUpdateState(It.Is<SimpleTreeEvent>(e => e is SimpleTreeEvent.ResultFetched)), Times.Once);
+        
+        _resultSaverNodeMock.Verify(x => x.ExecuteAsync(It.Is<SimpleTreeEvent>(e => e is SimpleTreeEvent.ResultFetched), It.IsAny<CancellationToken>()), Times.Once);
+        _resultSaverNodeMock.Verify(x => x.TryUpdateState(It.Is<SimpleTreeEvent>(e => e is SimpleTreeEvent.ResultSaveError)), Times.Once);
         
         Assert.IsType<SimpleTreeEvent.ResultSaveError>(producedEvent);
         Assert.Equal(1700, producedState.Balance);
         Assert.Equal(0, producedState.Attempt);
         Assert.Equal("Result save error", producedState.SaveResult!.ErrorMessage);
         Assert.False(producedState.SaveResult!.Success);
-        
-        _firstEventExecutorNodeMock.Verify(x => x.ExecuteAsync(It.IsAny<SimpleTreeEvent>(), It.IsAny<CancellationToken>()), Times.Once);
-        _firstEventExecutorNodeMock.Verify(x => x.TryUpdateState(It.IsAny<SimpleTreeEvent>()), Times.Once);
-        _resultSaverNodeMock.Verify(x => x.ExecuteAsync(It.IsAny<SimpleTreeEvent>(), It.IsAny<CancellationToken>()), Times.Once);
-        _resultSaverNodeMock.Verify(x => x.TryUpdateState(It.IsAny<SimpleTreeEvent>()), Times.Once);
     }
     
     [Theory]
@@ -113,18 +111,21 @@ public class SimpleTreeTests
         var producedEvent = result.ProducedEvent;
         var producedState = result.ProducedState;
         
+        _firstEventExecutorNodeMock.Verify(x => x.ExecuteAsync(It.IsAny<SimpleTreeEvent>(), It.IsAny<CancellationToken>()), Times.Never);
+        _firstEventExecutorNodeMock.Verify(x => x.TryUpdateState(It.Is<SimpleTreeEvent>(e => e is SimpleTreeEvent.AwaitingResult)), Times.Exactly(expectedAttempts));
+        _firstEventExecutorNodeMock.Verify(x => x.TryUpdateState(It.Is<SimpleTreeEvent>(e => e is SimpleTreeEvent.ResultFetched)), Times.Once);
+        
+        _resultSaverNodeMock.Verify(x => x.ExecuteAsync(It.Is<SimpleTreeEvent>(e => e is SimpleTreeEvent.ResultSaveError), It.IsAny<CancellationToken>()), Times.Once);
+        _resultSaverNodeMock.Verify(x => x.TryUpdateState(It.Is<SimpleTreeEvent>(e => e is SimpleTreeEvent.ResultSaveError)), Times.Once);
+        _resultSaverNodeMock.Verify(x => x.TryUpdateState(It.Is<SimpleTreeEvent>(e => e is SimpleTreeEvent.ResultSaved)), Times.Once);
+
+        
         Assert.IsType<SimpleTreeEvent.ResultSaved>(producedEvent);
         Assert.Equal(1500, producedState.Balance);
         Assert.Equal(expectedAttempts, producedState.Attempt);
         Assert.NotNull(producedState.SaveResult);
         Assert.Null(producedState.SaveResult.ErrorMessage);
-        Assert.True(producedState.SaveResult.Success);
-        
-        _firstEventExecutorNodeMock.Verify(x => x.ExecuteAsync(It.IsAny<SimpleTreeEvent>(), It.IsAny<CancellationToken>()), Times.Never);
-        _firstEventExecutorNodeMock.Verify(x => x.TryUpdateState(It.IsAny<SimpleTreeEvent>()), Times.Exactly(expectedAttempts + 1));
-        _resultSaverNodeMock.Verify(x => x.ExecuteAsync(It.IsAny<SimpleTreeEvent>(), It.IsAny<CancellationToken>()), Times.Once);
-        _resultSaverNodeMock.Verify(x => x.TryUpdateState(It.IsAny<SimpleTreeEvent>()), Times.Exactly(2));
-    }
+        Assert.True(producedState.SaveResult.Success); }
 
     [Fact]
     public async Task ExecuteTree_HasResultFetched_ShouldReturnResultSaveErrorEvent()
@@ -144,20 +145,21 @@ public class SimpleTreeTests
         var producedEvent = result.ProducedEvent;
         var producedState = result.ProducedState;
         
+        _firstEventExecutorNodeMock.Verify(x => x.ExecuteAsync(It.IsAny<SimpleTreeEvent>(), It.IsAny<CancellationToken>()), Times.Never);
+        _firstEventExecutorNodeMock.Verify(x => x.TryUpdateState(It.Is<SimpleTreeEvent>(e => e is SimpleTreeEvent.ResultFetched)), Times.Once);
+        
+        _resultSaverNodeMock.Verify(x => x.ExecuteAsync(It.Is<SimpleTreeEvent>(e => e is SimpleTreeEvent.ResultFetched), It.IsAny<CancellationToken>()), Times.Once);
+        _resultSaverNodeMock.Verify(x => x.TryUpdateState(It.Is<SimpleTreeEvent>(e => e is SimpleTreeEvent.ResultSaveError)), Times.Once);
+        
         Assert.IsType<SimpleTreeEvent.ResultSaveError>(producedEvent);
         Assert.Equal(1600, producedState.Balance);
         Assert.Equal(0, producedState.Attempt);
         Assert.NotNull(producedState.SaveResult);
         Assert.Equal("Result save error", producedState.SaveResult.ErrorMessage);
         Assert.False(producedState.SaveResult.Success);
-        
-        _firstEventExecutorNodeMock.Verify(x => x.ExecuteAsync(It.IsAny<SimpleTreeEvent>(), It.IsAny<CancellationToken>()), Times.Never);
-        _firstEventExecutorNodeMock.Verify(x => x.TryUpdateState(It.IsAny<SimpleTreeEvent>()), Times.Once);
-        _resultSaverNodeMock.Verify(x => x.ExecuteAsync(It.IsAny<SimpleTreeEvent>(), It.IsAny<CancellationToken>()), Times.Once);
-        _resultSaverNodeMock.Verify(x => x.TryUpdateState(It.IsAny<SimpleTreeEvent>()), Times.Once);
     }
 
-    private void PrepareNodesMocks()
+    private void ConfigureNodesMocks()
     {
         _firstEventExecutorNodeMock
             .Setup(x => x.ExecuteAsync(It.IsAny<SimpleTreeEvent>(), It.IsAny<CancellationToken>()))
@@ -203,6 +205,19 @@ public class SimpleTreeTests
                 _ => throw new Exception($"unhandled event: {@event.GetType().Name}")
             });
     }
+    
+    private ServiceProvider BuildServiceProvider()
+    {
+        var serviceCollection = new ServiceCollection();
+        
+        serviceCollection.AddTransient<FirstEventExecutorNode>(_ => _firstEventExecutorNodeMock.Object);
+        serviceCollection.AddTransient<ResultSaverNode>(_ => _resultSaverNodeMock.Object);
+        serviceCollection.AddLogging();
+        serviceCollection.RegisterTree<SimpleTreeState, SimpleTreeEvent, SimpleTreeProvider>();
+
+        return serviceCollection.BuildServiceProvider();
+    }
+
     
     private static SimpleTreeState InitializeState(SimpleTreeEvent @event)
     {
