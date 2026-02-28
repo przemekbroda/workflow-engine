@@ -2,6 +2,7 @@ using EventSourcingEngine.UnitTests.SimpleTreeTests.Tree;
 
 namespace EventSourcingEngine.UnitTests.SimpleTreeTests.Nodes;
 
+// Mocks will replace the implementation of this class, so I don't care what implementation is here. It's best to keep it simple
 public class FirstEventExecutorNode : BaseNodeExecutor<SimpleTreeState, SimpleTreeEvent>
 {
     public override async Task<SimpleTreeEvent> ExecuteAsync(SimpleTreeEvent @event, CancellationToken cancellationToken)
@@ -11,18 +12,6 @@ public class FirstEventExecutorNode : BaseNodeExecutor<SimpleTreeState, SimpleTr
 
     protected override SimpleTreeState UpdateState(SimpleTreeEvent e)
     {
-        return e switch
-        {
-            SimpleTreeEvent.AwaitingResult => Cursor.State with
-            {
-                AwaitingResult = true,
-                Attempt = Cursor.State.Attempt + 1
-            },
-            SimpleTreeEvent.ResultFetched resultFetched => Cursor.State with
-            {
-                AwaitingResult = false, Balance = Cursor.State.Balance + resultFetched.Amount
-            },
-            _ => Cursor.State
-        };
+        return Cursor.State;
     }
 }
