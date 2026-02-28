@@ -38,6 +38,7 @@ public class SimpleTreeTests
     [MemberData(nameof(AwaitingResultsWithAttempts))]
     public async Task ExecuteTree_MultipleAwaitingResultEvents_ShouldCalculateStateWithMultipleAttempts(List<SimpleTreeEvent> awaitingResultEvents, int expectedAttempts)
     {
+        // Arrange
         List<SimpleTreeEvent> events =
         [
             new SimpleTreeEvent.AwaitingExecution(1200),
@@ -45,7 +46,11 @@ public class SimpleTreeTests
         ];
         events.Reverse();
 
+        
+        // Act
         var result = await _tree.ExecuteTree(events, InitializeState, _cancellationTokenSource.Token);
+        
+        // Assert
         var producedEvent = result.ProducedEvent;
         var producedState = result.ProducedState;
         
@@ -62,12 +67,16 @@ public class SimpleTreeTests
     [Fact]
     public async Task ExecuteTree_WithOnlyAwaitingExecutionEvent_ShouldNotHaveAttemptsAndReturnResultSaveError()
     {
+        // Arrange
         List<SimpleTreeEvent> events =
         [
             new SimpleTreeEvent.AwaitingExecution(1200),
         ];
 
+        // Act
         var result = await _tree.ExecuteTree(events, InitializeState, _cancellationTokenSource.Token);
+        
+        // Assert
         var producedEvent = result.ProducedEvent;
         var producedState = result.ProducedState;
         
@@ -87,6 +96,7 @@ public class SimpleTreeTests
     [MemberData(nameof(AwaitingResultsWithAttempts))]
     public async Task ExecuteTree_HasAwaitingExecutionsAndResultFetchedAndResultSaveError_ShouldNotHaveAttemptsAndReturnResultSavedEvent(List<SimpleTreeEvent> awaitingResultEvents, int expectedAttempts)
     {
+        // Arrange
         List<SimpleTreeEvent> events =
         [
             new SimpleTreeEvent.AwaitingExecution(1200),
@@ -96,7 +106,10 @@ public class SimpleTreeTests
         ];
         events.Reverse();
 
+        // Act
         var result = await _tree.ExecuteTree(events, InitializeState, _cancellationTokenSource.Token);
+        
+        // Assert
         var producedEvent = result.ProducedEvent;
         var producedState = result.ProducedState;
         
@@ -116,6 +129,7 @@ public class SimpleTreeTests
     [Fact]
     public async Task ExecuteTree_HasResultFetched_ShouldReturnResultSaveErrorEvent()
     {
+        // Arrange
         List<SimpleTreeEvent> events =
         [
             new SimpleTreeEvent.AwaitingExecution(1200),
@@ -123,7 +137,10 @@ public class SimpleTreeTests
         ];
         events.Reverse();
 
+        // Act
         var result = await _tree.ExecuteTree(events, InitializeState, _cancellationTokenSource.Token);
+        
+        // Assert
         var producedEvent = result.ProducedEvent;
         var producedState = result.ProducedState;
         
