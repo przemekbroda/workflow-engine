@@ -4,14 +4,14 @@ namespace EventSourcingEngine;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection RegisterTree<TState, TEvent, TTreeProvider>(this IServiceCollection serviceCollection, ServiceLifetime eventSourceTreeLifetime = ServiceLifetime.Scoped)
+    public static IServiceCollection RegisterWorkflowTree<TState, TEvent, TTreeProvider>(this IServiceCollection serviceCollection, ServiceLifetime eventSourceTreeLifetime = ServiceLifetime.Scoped)
         where TState : class
         where TEvent : class
         where TTreeProvider : TreeProvider<TState, TEvent>
     {
         serviceCollection.AddSingleton<TTreeProvider>();
         
-        var descriptor = new ServiceDescriptor(typeof(IEventSourceTree<TState, TEvent, TTreeProvider>), typeof(EventSourceTree<TState, TEvent, TTreeProvider>), eventSourceTreeLifetime);
+        var descriptor = new ServiceDescriptor(typeof(IWorkflowTree<TState, TEvent, TTreeProvider>), typeof(WorkflowTree<TState, TEvent, TTreeProvider>), eventSourceTreeLifetime);
         serviceCollection.Add(descriptor);
         
         return serviceCollection;

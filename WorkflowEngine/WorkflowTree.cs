@@ -4,22 +4,22 @@ using Microsoft.Extensions.Logging;
 
 namespace EventSourcingEngine;
 
-internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree<TState, TEvent, TTreeProvider>
+internal class WorkflowTree<TState, TEvent, TTreeProvider> : IWorkflowTree<TState, TEvent, TTreeProvider>
     where TState : class
     where TEvent : class
     where TTreeProvider : TreeProvider<TState, TEvent>
 {
     private readonly EventNode<TState, TEvent> _eventNode;
     private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<EventSourceTree<TState, TEvent, TTreeProvider>> _logger;
+    private readonly ILogger<WorkflowTree<TState, TEvent, TTreeProvider>> _logger;
     private readonly TreeProvider<TState, TEvent> _treeProvider;
     
     private EventNodeInst<TState, TEvent> _eventNodeInst = null!;
 
-    public EventSourceTree(
+    public WorkflowTree(
         IServiceProvider serviceProvider, 
         TTreeProvider treeProvider,
-        ILogger<EventSourceTree<TState, TEvent, TTreeProvider>> logger)
+        ILogger<WorkflowTree<TState, TEvent, TTreeProvider>> logger)
     {
         _serviceProvider = serviceProvider;
         _treeProvider = treeProvider;
@@ -54,7 +54,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
 
         var finishedWithEvent = await Resume(cursor, cancellationToken);
         
-        _logger.LogDebug("Finished executing event sourcing tree");
+        _logger.LogDebug("Finished executing workflow tree");
 
         return finishedWithEvent;
     }
@@ -80,14 +80,14 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
     {
         if (initialCursorEvents.Count == 0)
         {
-            throw new EventSourcingEngineException("Cannot execute event sourcing tree with empty initial cursor events");
+            throw new WorkflowEngineException("Cannot execute workflow tree with empty initial cursor events");
         }
 
         foreach (var initialCursorEventType in initialCursorEvents.Select(e => e.GetType()))
         {
             if (!HandlesEvents.Contains(initialCursorEventType))
             {
-                throw new EventSourcingEngineException($"No node can handle event of type {initialCursorEventType.Name}");
+                throw new WorkflowEngineException($"No node can handle event of type {initialCursorEventType.Name}");
             }
         }
     }
@@ -95,12 +95,12 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
     /// <summary>
     /// 
     /// </summary>
-    /// <exception cref="EventSourcingEngineException"></exception>
+    /// <exception cref="WorkflowEngineException"></exception>
     private void ResolveTree()
     {
         if (_eventNode is null)
         {
-            throw new EventSourcingEngineException("No nodes were provided for event sourcing engine");
+            throw new WorkflowEngineException("No nodes were provided for workflow engine");
         }
         
         _eventNodeInst = InstantiateNode(_eventNode);
@@ -115,7 +115,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
 
         if (!_eventNodeInst.Executor.HandlesEvents.Contains(treeCursor.CurrentEvent.GetType()))
         {
-            throw new EventSourceEngineResumeException($"First node is not accepting initial event of this type {treeCursor.CurrentEvent.GetType().Name}");
+            throw new WorkflowEngineResumeException($"First node is not accepting initial event of this type {treeCursor.CurrentEvent.GetType().Name}");
         }
 
         treeCursor.State = stateInitializer(treeCursor.CurrentEvent);
@@ -160,7 +160,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
     /// </summary>
     /// <param name="cursor"></param>
     /// <param name="cancellationToken"></param>
-    /// <exception cref="EventSourceEngineResumeException">Thrown when could not find a node that can handle the latest event</exception>
+    /// <exception cref="WorkflowEngineResumeException">Thrown when could not find a node that can handle the latest event</exception>
     /// <exception cref="OperationCanceledException">The token has had cancellation requested.</exception>
     private async Task<ExecuteTreeResult<TState, TEvent>> Resume(Cursor<TState, TEvent> cursor, CancellationToken cancellationToken)
     {
@@ -168,7 +168,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
         
         if (eventNodeInst is null)
         {
-            throw new EventSourceEngineResumeException("Cannot resume event sourcing tree");
+            throw new WorkflowEngineResumeException("Cannot resume workflow tree");
         }
 
         return await TryExecuteNode(eventNodeInst, cursor, cancellationToken);
@@ -180,7 +180,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
         {
             if (!_eventNodeInst.Executor.HandlesEvents.Contains(cursor.ProcessedEvents.Peek().GetType()) || 
                 !_eventNodeInst.Executor.ProducesEvents.Contains(cursor.CurrentEvent.GetType()))
-                throw new EventSourceEngineResumeException("Cannot resume event sourcing tree");
+                throw new WorkflowEngineResumeException("Cannot resume workflow tree");
         }
         
         var eventNodeInst = ResumeTree(_eventNodeInst, cursor);

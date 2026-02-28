@@ -18,7 +18,7 @@ public abstract class BaseNodeExecutor<TState, TEvent> : INodeExecutor<TState, T
     {
         if (!ProducesEvents.Contains(@event.GetType()))
         {
-            throw new EventSourcingEngineException($"Cannot handle state update for provided event type {@event.GetType().Name}");
+            throw new WorkflowEngineException($"Cannot handle state update for provided event type {@event.GetType().Name}");
         }
 
         return UpdateState(@event);
