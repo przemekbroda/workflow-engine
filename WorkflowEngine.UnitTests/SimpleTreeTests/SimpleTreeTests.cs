@@ -10,7 +10,7 @@ public class SimpleTreeTests
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly Mock<FirstEventExecutorNode> _firstEventExecutorNodeMock = new();
     private readonly Mock<ResultSaverNode> _resultSaverNodeMock = new();
-    
+     
     public SimpleTreeTests()
     {
         ConfigureNodesMocks();
