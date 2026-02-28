@@ -27,7 +27,7 @@ public class TreeProviderTests
         var exception = Assert.Throws<EventSourcingEngineTreeValidationException>(() =>
             new SameEventsTreeProvider());
         
-        Assert.Equal($"Child nodes handles same event ({typeof(TreeEvent.Event8)}) as other node with the same parent node", exception.Message);
+        Assert.Equal($"Child node handles same event ({typeof(TreeEvent.Event8)}) as other node with the same parent node", exception.Message);
     }
 
     [Fact]

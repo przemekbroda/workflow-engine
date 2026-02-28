@@ -129,7 +129,7 @@ internal class EventSourceTree<TState, TEvent, TTreeProvider> : IEventSourceTree
         
         if (ShouldHandleStateUpdate(eventNodeInst, cursor))
         {
-            eventNodeInst.Executor.TryUpdateState(cursor.CurrentEvent);
+            cursor.State = eventNodeInst.Executor.TryUpdateState(cursor.CurrentEvent);
         }
         
         if (cursor.InitEvents.Count == 1 && eventNodeInst.Executor.HandlesEvents.Contains(cursor.CurrentEvent.GetType()))
