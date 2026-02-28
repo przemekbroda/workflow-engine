@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.RegisterTree<TestState, FirstTreeEvent, FirstTreeProvider>();
+builder.Services.RegisterWorkflowTree<TestState, FirstTreeEvent, FirstTreeProvider>();
 builder.Services.AddTransient<EventExecutorNode>();
 builder.Services.AddTransient<ResultSaverNode>();
 
@@ -25,7 +25,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapGet("/execute-tree",  async ([FromServices] IEventSourceTree<TestState, FirstTreeEvent, FirstTreeProvider> firstEventSourceTree, CancellationToken cancellationToken) =>
+app.MapGet("/execute-tree",  async ([FromServices] IWorkflowTree<TestState, FirstTreeEvent, FirstTreeProvider> firstWorkflowTree, CancellationToken cancellationToken) =>
     {
         List<FirstTreeEvent> events =
         [
@@ -87,7 +87,7 @@ app.MapGet("/execute-tree",  async ([FromServices] IEventSourceTree<TestState, F
             };
         };
         
-        var finishedWithEvent = await firstEventSourceTree.ExecuteTree(events, stateInitializer, cancellationToken);
+        var finishedWithEvent = await firstWorkflowTree.ExecuteTree(events, stateInitializer, cancellationToken);
         
         Console.WriteLine($"Finished with event {finishedWithEvent}");
     })

@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.RegisterTree<TestState, FirstTreeEvent, FirstTreeProvider>();
+builder.Services.RegisterWorkflowTree<TestState, FirstTreeEvent, FirstTreeProvider>();
 builder.Services.AddScoped<EventExecutorNode>();
 builder.Services.AddScoped<ResultSaverNode>();
 
@@ -75,7 +75,7 @@ app.MapGet("/process/{id:guid}", async (AppDbContext dbContext, Guid id) =>
 app.MapPatch("/process/{id:guid}", async (
     Guid id, 
     AppDbContext dbContext, 
-    IEventSourceTree<TestState, FirstTreeEvent, FirstTreeProvider> eventSource, 
+    IWorkflowTree<TestState, FirstTreeEvent, FirstTreeProvider> workflow, 
     CancellationToken cancellationToken) =>
 {
     using (var transaction = dbContext.Database.BeginTransaction(IsolationLevel.ReadCommitted))
@@ -106,7 +106,7 @@ app.MapPatch("/process/{id:guid}", async (
                 .OrderByDescending(e => e.Index)
                 .ToList();
 
-            var result = await eventSource.ExecuteTree(events, @event =>
+            var result = await workflow.ExecuteTree(events, @event =>
             {
                 if (@event is not FirstTreeEvent.AwaitingExecution execution)
                 {

@@ -1,6 +1,6 @@
 namespace EventSourcingEngine;
 
-public interface IEventSourceTree<TState, TEvent, TTreeProvider>
+public interface IWorkflowTree<TState, TEvent, TTreeProvider>
     where TState : class
     where TEvent : class
     where TTreeProvider : TreeProvider<TState, TEvent>
@@ -8,7 +8,7 @@ public interface IEventSourceTree<TState, TEvent, TTreeProvider>
     IReadOnlyList<Type> HandlesEvents { get; }
     
     /// <summary>
-    /// Executes event sourcing tree with given state initializer
+    /// Executes workflow tree with given state initializer
     /// </summary>
     /// <param name="events"></param>
     /// <param name="stateInitializer">State initializer</param>

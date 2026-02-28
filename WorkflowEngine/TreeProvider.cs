@@ -26,17 +26,17 @@ public abstract class TreeProvider<TState, TEvent>
     {
         if (eventNode.HandlesEvents.Count == 0)
         {
-            throw new EventSourcingEngineTreeValidationException("Node must handle at least one event");
+            throw new WorkflowEngineTreeValidationException("Node must handle at least one event");
         }
 
         if (eventNode.ProducesEvents.Count == 0)
         {
-            throw new EventSourcingEngineTreeValidationException("Node must produce at least one event");
+            throw new WorkflowEngineTreeValidationException("Node must produce at least one event");
         }
         
         if (!typeof(INodeExecutor<TState, TEvent>).IsAssignableFrom(eventNode.Executor))
         {
-            throw new EventSourcingEngineTreeValidationException("Executor must implement INodeExecutor");
+            throw new WorkflowEngineTreeValidationException("Executor must implement INodeExecutor");
         }
 
         CheckForDuplicatedHandledEventsInNextExecutor(eventNode);
@@ -57,7 +57,7 @@ public abstract class TreeProvider<TState, TEvent>
         {
             if (!eventTypes.Add(producesEventName))
             {
-                throw new EventSourcingEngineTreeValidationException($"Child node handles same event ({producesEventName}) as other node with the same parent node");
+                throw new WorkflowEngineTreeValidationException($"Child node handles same event ({producesEventName}) as other node with the same parent node");
             }
         }
     }
@@ -72,7 +72,7 @@ public abstract class TreeProvider<TState, TEvent>
             {
                 if (!parentProducedEvents.Remove(childNodeHandledEvent) && !childNode.ProducesEvents.Contains(childNodeHandledEvent))
                 {
-                    throw new EventSourcingEngineTreeValidationException($"Node with an executor {childNode.Executor.Name} handles event {childNodeHandledEvent} that is not produced by parent node with an executor {parentNode.Executor.Name} or by itself");
+                    throw new WorkflowEngineTreeValidationException($"Node with an executor {childNode.Executor.Name} handles event {childNodeHandledEvent} that is not produced by parent node with an executor {parentNode.Executor.Name} or by itself");
                 }
             }
         }
