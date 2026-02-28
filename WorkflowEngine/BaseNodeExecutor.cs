@@ -14,7 +14,7 @@ public abstract class BaseNodeExecutor<TState, TEvent> : INodeExecutor<TState, T
     
     public abstract Task<TEvent> ExecuteAsync(TEvent @event, CancellationToken cancellationToken);
 
-    public TState TryUpdateState(TEvent @event)
+    public virtual TState TryUpdateState(TEvent @event)
     {
         if (!ProducesEvents.Contains(@event.GetType()))
         {
